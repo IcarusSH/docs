@@ -253,6 +253,15 @@ angular.module('docs',
         }
       }
     })
+    .state('settings.casdoor', {
+      url: '/casdoor',
+      views: {
+        'settings': {
+          templateUrl: 'partial/docs/settings.casdoor.html',
+          controller: 'SettingsCasdoor'
+        }
+      }
+    })
     .state('document', {
       url: '/document',
       abstract: true,

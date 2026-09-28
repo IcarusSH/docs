@@ -1,0 +1,75 @@
+<h2 translate="settings.casdoor.title"></h2>
+<form class="form-horizontal" name="form" novalidate>
+  <div class="form-group">
+    <label class="col-sm-2 control-label" for="casdoorEnabled">{{ 'settings.casdoor.enabled' | translate }}</label>
+    <div class="col-sm-7">
+      <input name="enabled" type="checkbox" id="casdoorEnabled" ng-model="casdoor.enabled" />
+    </div>
+  </div>
+
+  <div ng-if="casdoor.enabled" class="form-group" ng-class="{ 'has-error': !form.serverUrl.$valid && form.$dirty }">
+    <label class="col-sm-2 control-label" for="casdoorServerUrl">{{ 'settings.casdoor.server_url' | translate }}</label>
+    <div class="col-sm-7">
+      <input name="serverUrl" type="url" class="form-control" id="casdoorServerUrl"
+             ng-model="casdoor.server_url" ng-maxlength="500" required />
+    </div>
+  </div>
+
+  <div ng-if="casdoor.enabled" class="form-group" ng-class="{ 'has-error': !form.clientId.$valid && form.$dirty }">
+    <label class="col-sm-2 control-label" for="casdoorClientId">{{ 'settings.casdoor.client_id' | translate }}</label>
+    <div class="col-sm-7">
+      <input name="clientId" type="text" class="form-control" id="casdoorClientId"
+             ng-model="casdoor.client_id" ng-maxlength="250" required />
+    </div>
+  </div>
+
+  <div ng-if="casdoor.enabled" class="form-group">
+    <label class="col-sm-2 control-label" for="casdoorClientSecret">{{ 'settings.casdoor.client_secret' | translate }}</label>
+    <div class="col-sm-7">
+      <input name="clientSecret" type="password" class="form-control" id="casdoorClientSecret"
+             ng-model="casdoor.client_secret" ng-maxlength="500" />
+    </div>
+  </div>
+
+  <div ng-if="casdoor.enabled" class="form-group" ng-class="{ 'has-error': !form.organization.$valid && form.$dirty }">
+    <label class="col-sm-2 control-label" for="casdoorOrganization">{{ 'settings.casdoor.organization' | translate }}</label>
+    <div class="col-sm-7">
+      <input name="organization" type="text" class="form-control" id="casdoorOrganization"
+             ng-model="casdoor.organization" ng-maxlength="250" required />
+    </div>
+  </div>
+
+  <div ng-if="casdoor.enabled" class="form-group" ng-class="{ 'has-error': !form.application.$valid && form.$dirty }">
+    <label class="col-sm-2 control-label" for="casdoorApplication">{{ 'settings.casdoor.application' | translate }}</label>
+    <div class="col-sm-7">
+      <input name="application" type="text" class="form-control" id="casdoorApplication"
+             ng-model="casdoor.application" ng-maxlength="250" required />
+    </div>
+  </div>
+
+  <div ng-if="casdoor.enabled" class="form-group" ng-class="{ 'has-error': !form.defaultStorage.$valid && form.$dirty }">
+    <label class="col-sm-2 control-label" for="casdoorDefaultStorage">{{ 'settings.casdoor.default_storage' | translate }}</label>
+    <div class="col-sm-7">
+      <div class="input-group">
+        <input name="defaultStorage" type="number" id="casdoorDefaultStorage" required class="form-control"
+               ng-pattern="/[0-9]*/" ng-model="casdoor.default_storage" />
+        <div class="input-group-addon">{{ 'filter.filesize.mb' | translate }}</div>
+      </div>
+    </div>
+    <div class="col-sm-3">
+      <span class="help-block" ng-show="form.default_storage.$error.pattern && form.$dirty">{{ 'validation.number' | translate }}</span>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <div class="col-sm-offset-2 col-sm-10">
+      <button type="submit" class="btn btn-primary" ng-click="save()" ng-disabled="!form.$valid">
+        <span class="fas fa-pencil-alt"></span> {{ 'save' | translate }}
+      </button>
+    </div>
+  </div>
+</form>
+
+<div class="alert col-sm-9 alert-success" ng-show="saveResult">
+  {{ saveResult }}
+</div>

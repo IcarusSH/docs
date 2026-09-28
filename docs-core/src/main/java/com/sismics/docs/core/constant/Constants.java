@@ -84,6 +84,16 @@ public class Constants {
     public static final String BCRYPT_WORK_ENV = "DOCS_BCRYPT_WORK";
 
     /**
+     * Casdoor SSO configuration environment variables.
+     */
+    public static final String CASDOOR_ENABLED_ENV = "DOCS_CASDOOR_ENABLED";
+    public static final String CASDOOR_SERVER_URL_ENV = "DOCS_CASDOOR_SERVER_URL";
+    public static final String CASDOOR_CLIENT_ID_ENV = "DOCS_CASDOOR_CLIENT_ID";
+    public static final String CASDOOR_CLIENT_SECRET_ENV = "DOCS_CASDOOR_CLIENT_SECRET";
+    public static final String CASDOOR_ORG_ENV = "DOCS_CASDOOR_ORGANIZATION";
+    public static final String CASDOOR_APP_ENV = "DOCS_CASDOOR_APPLICATION";
+
+    /**
      * Expiration time of the password recovery in hours.
      */
     public static final int PASSWORD_RECOVERY_EXPIRATION_HOUR = 2;

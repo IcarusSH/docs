@@ -86,6 +86,7 @@ public class AppResource extends BaseResource {
         String minVersion = configBundle.getString("api.min_version");
         Boolean guestLogin = ConfigUtil.getConfigBooleanValue(ConfigType.GUEST_LOGIN);
         Boolean ocrEnabled = ConfigUtil.getConfigBooleanValue(ConfigType.OCR_ENABLED, true);
+        Boolean casdoorEnabled = ConfigUtil.getConfigBooleanValue(ConfigType.CASDOOR_ENABLED, false);
         String defaultLanguage = ConfigUtil.getConfigStringValue(ConfigType.DEFAULT_LANGUAGE);
         UserDao userDao = new UserDao();
         DocumentDao documentDao = new DocumentDao();
@@ -100,6 +101,7 @@ public class AppResource extends BaseResource {
                 .add("min_version", minVersion)
                 .add("guest_login", guestLogin)
                 .add("ocr_enabled", ocrEnabled)
+                .add("casdoor_enabled", casdoorEnabled)
                 .add("default_language", defaultLanguage)
                 .add("queued_tasks", AppContext.getInstance().getQueuedTaskCount())
                 .add("total_memory", Runtime.getRuntime().totalMemory())
@@ -881,6 +883,104 @@ public class AppResource extends BaseResource {
         } else {
             // LDAP disabled
             configDao.update(ConfigType.LDAP_ENABLED, Boolean.FALSE.toString());
+        }
+
+        return Response.ok().build();
+    }
+
+    /**
+     * Get the Casdoor SSO configuration.
+     *
+     * @api {get} /app/config_casdoor Get the Casdoor SSO configuration
+     * @apiName GetAppConfigCasdoor
+     * @apiGroup App
+     * @apiSuccess {Boolean} enabled Casdoor SSO enabled
+     * @apiSuccess {String} server_url Casdoor server URL
+     * @apiSuccess {String} client_id Casdoor client ID
+     * @apiSuccess {String} client_secret Casdoor client secret
+     * @apiSuccess {String} organization Casdoor organization name
+     * @apiSuccess {String} application Casdoor application name
+     * @apiSuccess {Long} default_storage Default storage for newly created SSO users
+     * @apiPermission admin
+     *
+     * @return Response
+     */
+    @GET
+    @Path("config_casdoor")
+    public Response getConfigCasdoor() {
+        if (!authenticate()) {
+            throw new ForbiddenClientException();
+        }
+        checkBaseFunction(BaseFunction.ADMIN);
+
+        ConfigDao configDao = new ConfigDao();
+        Config enabled = configDao.getById(ConfigType.CASDOOR_ENABLED);
+
+        JsonObjectBuilder response = Json.createObjectBuilder();
+        if (enabled != null && Boolean.parseBoolean(enabled.getValue())) {
+            response.add("enabled", true)
+                    .add("server_url", ConfigUtil.getConfigStringValue(ConfigType.CASDOOR_SERVER_URL))
+                    .add("client_id", ConfigUtil.getConfigStringValue(ConfigType.CASDOOR_CLIENT_ID))
+                    .add("client_secret", ConfigUtil.getConfigStringValue(ConfigType.CASDOOR_CLIENT_SECRET))
+                    .add("organization", ConfigUtil.getConfigStringValue(ConfigType.CASDOOR_ORGANIZATION))
+                    .add("application", ConfigUtil.getConfigStringValue(ConfigType.CASDOOR_APPLICATION))
+                    .add("default_storage", ConfigUtil.getConfigLongValue(ConfigType.CASDOOR_DEFAULT_STORAGE));
+        } else {
+            response.add("enabled", false);
+        }
+
+        return Response.ok().entity(response.build()).build();
+    }
+
+    /**
+     * Configure Casdoor SSO.
+     *
+     * @api {post} /app/config_casdoor Configure Casdoor SSO
+     * @apiName PostAppConfigCasdoor
+     * @apiGroup App
+     * @apiPermission admin
+     *
+     * @param enabled Enable Casdoor SSO
+     * @param serverUrl Casdoor server URL
+     * @param clientId Casdoor client ID
+     * @param clientSecret Casdoor client secret
+     * @param organization Casdoor organization
+     * @param application Casdoor application
+     * @param defaultStorageStr Default storage in bytes for newly created SSO users
+     * @return Response
+     */
+    @POST
+    @Path("config_casdoor")
+    public Response configCasdoor(@FormParam("enabled") Boolean enabled,
+                                 @FormParam("server_url") String serverUrl,
+                                 @FormParam("client_id") String clientId,
+                                 @FormParam("client_secret") String clientSecret,
+                                 @FormParam("organization") String organization,
+                                 @FormParam("application") String application,
+                                 @FormParam("default_storage") String defaultStorageStr) {
+        if (!authenticate()) {
+            throw new ForbiddenClientException();
+        }
+        checkBaseFunction(BaseFunction.ADMIN);
+
+        ConfigDao configDao = new ConfigDao();
+
+        if (enabled != null && enabled) {
+            ValidationUtil.validateHttpUrl(serverUrl, "server_url");
+            ValidationUtil.validateLength(clientId, "client_id", 1, 250);
+            ValidationUtil.validateLength(clientSecret, "client_secret", 0, 500);
+            ValidationUtil.validateLength(organization, "organization", 1, 250);
+            ValidationUtil.validateLength(application, "application", 1, 250);
+            ValidationUtil.validateLong(defaultStorageStr, "default_storage");
+            configDao.update(ConfigType.CASDOOR_ENABLED, Boolean.TRUE.toString());
+            configDao.update(ConfigType.CASDOOR_SERVER_URL, serverUrl);
+            configDao.update(ConfigType.CASDOOR_CLIENT_ID, clientId);
+            configDao.update(ConfigType.CASDOOR_CLIENT_SECRET, clientSecret == null ? "" : clientSecret);
+            configDao.update(ConfigType.CASDOOR_ORGANIZATION, organization);
+            configDao.update(ConfigType.CASDOOR_APPLICATION, application);
+            configDao.update(ConfigType.CASDOOR_DEFAULT_STORAGE, defaultStorageStr);
+        } else {
+            configDao.update(ConfigType.CASDOOR_ENABLED, Boolean.FALSE.toString());
         }
 
         return Response.ok().build();

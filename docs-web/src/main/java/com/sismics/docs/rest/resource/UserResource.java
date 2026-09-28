@@ -313,7 +313,7 @@ public class UserResource extends BaseResource {
             if (Strings.isNullOrEmpty(validationCodeStr)) {
                 throw new ClientException("ValidationCodeRequired", "An OTP validation code is required");
             }
-            
+
             // Check the validation code
             int validationCode = ValidationUtil.validateInteger(validationCodeStr, "code");
             GoogleAuthenticator googleAuthenticator = new GoogleAuthenticator();
@@ -321,29 +321,19 @@ public class UserResource extends BaseResource {
                 throw new ForbiddenClientException();
             }
         }
-        
-        // Get the remote IP
-        String ip = request.getHeader("x-forwarded-for");
-        if (Strings.isNullOrEmpty(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        
-        // Create a new session token
-        AuthenticationTokenDao authenticationTokenDao = new AuthenticationTokenDao();
-        AuthenticationToken authenticationToken = new AuthenticationToken()
-            .setUserId(user.getId())
-            .setLongLasted(longLasted)
-            .setIp(StringUtils.abbreviate(ip, 45))
-            .setUserAgent(StringUtils.abbreviate(request.getHeader("user-agent"), 1000));
-        String token = authenticationTokenDao.create(authenticationToken);
-        
-        // Cleanup old session tokens
-        authenticationTokenDao.deleteOldSessionToken(user.getId());
 
+        NewCookie cookie = AuthTokenUtil.issueCookie(request, user, longLasted);
         JsonObjectBuilder response = Json.createObjectBuilder();
-        int maxAge = longLasted ? TokenBasedSecurityFilter.TOKEN_LONG_LIFETIME : -1;
-        NewCookie cookie = new NewCookie(TokenBasedSecurityFilter.COOKIE_NAME, token, "/", null, null, maxAge, false);
         return Response.ok().entity(response.build()).cookie(cookie).build();
+    }
+
+    /**
+     * Create a new session token + auth cookie for the given user.
+     * Kept as a thin wrapper for backwards compatibility with callers that
+     * invoked this method directly; delegates to AuthTokenUtil.
+     */
+    private NewCookie createAuthCookie(User user, boolean longLasted) {
+        return AuthTokenUtil.issueCookie(request, user, longLasted);
     }
 
     /**

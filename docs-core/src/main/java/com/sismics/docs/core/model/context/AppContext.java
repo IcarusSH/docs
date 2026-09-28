@@ -4,7 +4,9 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
+import com.sismics.docs.core.constant.ConfigType;
 import com.sismics.docs.core.constant.Constants;
+import com.sismics.docs.core.dao.ConfigDao;
 import com.sismics.docs.core.dao.UserDao;
 import com.sismics.docs.core.listener.async.*;
 import com.sismics.docs.core.model.jpa.User;
@@ -137,6 +139,39 @@ public class AppContext {
                 userDao.update(adminUser, "admin");
             }
         }
+
+        // Bootstrap Casdoor SSO config from environment variables, but only when
+        // the DB has not been explicitly configured. This lets Docker / CI deployments
+        // ship env-only configs without admin interaction, while still allowing an
+        // admin to override anything later via /app/config_casdoor.
+        bootstrapEnvConfig(Constants.CASDOOR_ENABLED_ENV,    ConfigType.CASDOOR_ENABLED,        "false");
+        bootstrapEnvConfig(Constants.CASDOOR_SERVER_URL_ENV,  ConfigType.CASDOOR_SERVER_URL,      null);
+        bootstrapEnvConfig(Constants.CASDOOR_CLIENT_ID_ENV,   ConfigType.CASDOOR_CLIENT_ID,       null);
+        bootstrapEnvConfig(Constants.CASDOOR_CLIENT_SECRET_ENV, ConfigType.CASDOOR_CLIENT_SECRET, null);
+        bootstrapEnvConfig(Constants.CASDOOR_ORG_ENV,         ConfigType.CASDOOR_ORGANIZATION,    null);
+        bootstrapEnvConfig(Constants.CASDOOR_APP_ENV,         ConfigType.CASDOOR_APPLICATION,     null);
+    }
+
+    /**
+     * Initialize a config key from an environment variable only when the key
+     * has never been written to the database. Existing DB values are preserved
+     * so admin overrides survive container restarts.
+     */
+    private void bootstrapEnvConfig(String envVar, ConfigType configType, String defaultValue) {
+        String value = System.getenv(envVar);
+        if (Strings.isNullOrEmpty(value)) {
+            value = defaultValue;
+        }
+        if (Strings.isNullOrEmpty(value)) {
+            return;
+        }
+        ConfigDao configDao = new ConfigDao();
+        if (configDao.getById(configType) != null) {
+            // DB already has an explicit value; don't clobber it.
+            return;
+        }
+        configDao.update(configType, value);
+        log.info("Bootstrapped config \"" + configType + "\" from environment");
     }
 
     /**
