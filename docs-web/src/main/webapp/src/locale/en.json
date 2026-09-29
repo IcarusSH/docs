@@ -106,7 +106,6 @@
       "forbidden": "Access forbidden",
       "download_files": "Download files",
       "export_pdf": "Export to PDF",
-      "view_log": "View log",
       "by_creator": "by",
       "comments": "Comments",
       "no_comments": "No comments on this document yet",
@@ -154,9 +153,9 @@
         "acl_target": "For",
         "acl_permission": "Permission"
       },
-      "activity": {
-        "activity": "Activity",
-        "message": "Every actions on this document are logged here."
+      "log": {
+        "log": "Logs",
+        "message": "Every action on this document is logged here."
       }
     },
     "edit": {
