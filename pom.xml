@@ -48,6 +48,7 @@
     <com.squareup.okhttp3.okhttp.version>4.10.0</com.squareup.okhttp3.okhttp.version>
     <org.apache.directory.api.version>2.1.3</org.apache.directory.api.version>
     <org.apache.directory.server.apacheds-all.version>2.0.0.AM27</org.apache.directory.server.apacheds-all.version>
+    <com.opencsv.opencsv.version>5.9</com.opencsv.opencsv.version>
 
     <org.glassfish.jersey.version>3.0.10</org.glassfish.jersey.version>
     <jakarta.servlet.jakarta.servlet-api.version>5.0.0</jakarta.servlet.jakarta.servlet-api.version>
@@ -192,6 +193,12 @@
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
         <version>${commons-io.commons-io.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.opencsv</groupId>
+        <artifactId>opencsv</artifactId>
+        <version>${com.opencsv.opencsv.version}</version>
       </dependency>
 
       <dependency>

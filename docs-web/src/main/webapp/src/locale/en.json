@@ -322,6 +322,7 @@
       "import_csv_help": "Upload a CSV file with the following columns:",
       "import_csv_columns_help": "username (required), email (required), role (admin|user), storage_quota_mb (required integer), update (optional: skip|overwrite|patch, default skip).",
       "import_no_file": "Please pick a CSV file first.",
+      "import_download_template": "Download a sample template",
       "import_submit": "Upload",
       "import_results": "Result summary",
       "import_created": "users created",
@@ -601,8 +602,9 @@
     }
   },
   "acl": {
+    "SEARCHABLE": "Can search",
     "READ": "Can read",
-    "READWRITE": "Can write",
+    "DOWNLOADABLE": "Can download",
     "WRITE": "Can write",
     "USER": "User",
     "GROUP": "Group",

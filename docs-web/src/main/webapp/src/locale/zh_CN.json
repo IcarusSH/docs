@@ -274,6 +274,7 @@
       "import_csv_help": "请上传一个包含以下列的 CSV 文件：",
       "import_csv_columns_help": "username（必填）、email（必填）、role（admin|user）、storage_quota_mb（必填整数）、update（可选：skip|overwrite|patch，默认 skip）。",
       "import_no_file": "请先选择 CSV 文件。",
+      "import_download_template": "下载示例模板",
       "import_submit": "上传",
       "import_results": "结果摘要",
       "import_created": "新建用户",
@@ -500,8 +501,9 @@
     }
   },
   "acl": {
+    "SEARCHABLE": "可检索",
     "READ": "可读",
-    "READWRITE": "可写",
+    "DOWNLOADABLE": "可下载",
     "WRITE": "可写",
     "USER": "用户",
     "GROUP": "组",

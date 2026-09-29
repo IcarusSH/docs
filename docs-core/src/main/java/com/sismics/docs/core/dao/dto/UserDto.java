@@ -48,6 +48,11 @@ public class UserDto {
      */
     private String totpKey;
 
+    /**
+     * Role ID (e.g. "admin" or "user").
+     */
+    private String roleId;
+
     public String getId() {
         return id;
     }
@@ -111,6 +116,14 @@ public class UserDto {
 
     public void setTotpKey(String totpKey) {
         this.totpKey = totpKey;
+    }
+
+    public String getRoleId() {
+        return roleId;
+    }
+
+    public void setRoleId(String roleId) {
+        this.roleId = roleId;
     }
 
     @Override

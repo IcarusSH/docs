@@ -3,6 +3,15 @@
   <a class="btn btn-primary" href="#/settings/user/add">{{ 'settings.user.add_user' | translate }}</a>
 </h1>
 
+<div class="csv-actions" style="margin: 10px 0;">
+  <button class="btn btn-default" ng-click="openImport()">
+    <span class="fas fa-upload"></span> {{ 'settings.user.import_csv' | translate }}
+  </button>
+  <a class="btn btn-default" ng-href="../api/user/export" download>
+    <span class="fas fa-download"></span> {{ 'settings.user.export_csv' | translate }}
+  </a>
+</div>
+
 <div class="row">
   <div class="col-md-4 well">
     <table class="table table-hover table-users">

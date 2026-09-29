@@ -123,12 +123,12 @@ public class UserDao {
     
     /**
      * Updates a user's quota.
-     * 
+     *
      * @param user User to update
      */
     public void updateQuota(User user) {
         EntityManager em = ThreadLocalContext.get().getEntityManager();
-        
+
         // Get the user
         Query q = em.createQuery("select u from User u where u.id = :id and u.deleteDate is null");
         q.setParameter("id", user.getId());
@@ -136,6 +136,29 @@ public class UserDao {
 
         // Update the user
         userDb.setStorageCurrent(user.getStorageCurrent());
+    }
+
+    /**
+     * Updates a user's role. Used by bulk CSV import. The caller is responsible
+     * for ensuring the roleId is a valid role string ("admin" or "user"); this
+     * method does not validate it against the T_ROLE table.
+     *
+     * @param user User with the new roleId set
+     * @param userId User ID performing the change (for audit log)
+     * @return Updated user
+     */
+    public User updateRole(User user, String userId) {
+        EntityManager em = ThreadLocalContext.get().getEntityManager();
+
+        Query q = em.createQuery("select u from User u where u.id = :id and u.deleteDate is null");
+        q.setParameter("id", user.getId());
+        User userDb = (User) q.getSingleResult();
+
+        userDb.setRoleId(user.getRoleId());
+
+        AuditLogUtil.create(userDb, AuditLogType.UPDATE, userId);
+
+        return userDb;
     }
     
     /**
@@ -316,7 +339,7 @@ public class UserDao {
         Map<String, Object> parameterMap = new HashMap<>();
         List<String> criteriaList = new ArrayList<>();
         
-        StringBuilder sb = new StringBuilder("select u.USE_ID_C as c0, u.USE_USERNAME_C as c1, u.USE_EMAIL_C as c2, u.USE_CREATEDATE_D as c3, u.USE_STORAGECURRENT_N as c4, u.USE_STORAGEQUOTA_N as c5, u.USE_TOTPKEY_C as c6, u.USE_DISABLEDATE_D as c7");
+        StringBuilder sb = new StringBuilder("select u.USE_ID_C as c0, u.USE_USERNAME_C as c1, u.USE_EMAIL_C as c2, u.USE_CREATEDATE_D as c3, u.USE_STORAGECURRENT_N as c4, u.USE_STORAGEQUOTA_N as c5, u.USE_TOTPKEY_C as c6, u.USE_DISABLEDATE_D as c7, u.USE_IDROLE_C as c8");
         sb.append(" from T_USER u ");
         
         // Add search criterias
@@ -364,6 +387,8 @@ public class UserDao {
             if (o[i] != null) {
                 userDto.setDisableTimestamp(((Timestamp) o[i]).getTime());
             }
+            i++;
+            userDto.setRoleId((String) o[i++]);
             userDtoList.add(userDto);
         }
         return userDtoList;
