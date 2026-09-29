@@ -7,7 +7,7 @@ import org.joda.time.DateTimeZone;
 
 /**
  * Authenticated users principal.
- * 
+ *
  * @author jtremeaux
  */
 public class UserPrincipal implements IPrincipal {
@@ -15,31 +15,43 @@ public class UserPrincipal implements IPrincipal {
      * ID of the user.
      */
     private String id;
-    
+
     /**
      * Username of the user.
      */
     private String name;
-    
+
     /**
      * Timezone of the principal.
      */
     private DateTimeZone dateTimeZone;
-    
+
     /**
      * Email of the principal.
      */
     private String email;
-    
+
     /**
      * User base functions.
      */
     private Set<String> baseFunctionSet;
-    
+
     /**
      * User groups.
      */
     private Set<String> groupIdSet;
+
+    /**
+     * When this principal is impersonating another user (admin "log in as" feature), this is
+     * the id of the real signed-in user. Null when not impersonating.
+     */
+    private String realUserId;
+
+    /**
+     * When this principal is impersonating another user, this is the username of the real
+     * signed-in user. Null when not impersonating.
+     */
+    private String realUserName;
     
     /**
      * Constructor of UserPrincipal.
@@ -113,5 +125,34 @@ public class UserPrincipal implements IPrincipal {
     @Override
     public boolean isGuest() {
         return Constants.GUEST_USER_ID.equals(id);
+    }
+
+    /**
+     * Returns the id of the real signed-in user when impersonating, or null otherwise.
+     */
+    public String getRealUserId() {
+        return realUserId;
+    }
+
+    public void setRealUserId(String realUserId) {
+        this.realUserId = realUserId;
+    }
+
+    /**
+     * Returns the username of the real signed-in user when impersonating, or null otherwise.
+     */
+    public String getRealUserName() {
+        return realUserName;
+    }
+
+    public void setRealUserName(String realUserName) {
+        this.realUserName = realUserName;
+    }
+
+    /**
+     * True if this principal is currently impersonating another user.
+     */
+    public boolean isImpersonating() {
+        return realUserId != null;
     }
 }

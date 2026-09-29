@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import com.sismics.docs.core.constant.Constants;
 import com.sismics.docs.core.dao.GroupDao;
 import com.sismics.docs.core.dao.RoleBaseFunctionDao;
+import com.sismics.docs.core.dao.UserDao;
 import com.sismics.docs.core.dao.criteria.GroupCriteria;
 import com.sismics.docs.core.dao.dto.GroupDto;
 import com.sismics.docs.core.model.jpa.User;
@@ -18,7 +19,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An abstract security filter for user authentication, that injects corresponding users into the request.
@@ -35,9 +38,48 @@ public abstract class SecurityFilter implements Filter {
     public static final String PRINCIPAL_ATTRIBUTE = "principal";
 
     /**
+     * Request attribute key carrying the resolved authentication token ID. Subclasses that need
+     * to know the current token (e.g. to look up impersonation state) can read this.
+     */
+    public static final String AUTH_TOKEN_ID_ATTRIBUTE = "authTokenId";
+
+    /**
      * Logger.
      */
     static final Logger LOG = LoggerFactory.getLogger(SecurityFilter.class);
+
+    /**
+     * In-memory map of impersonation state, keyed by the signed-in admin's authentication token
+     * ID. Value is the user ID being impersonated. Cleared when the admin logs out or stops
+     * impersonating. Survives only as long as the JVM is up.
+     */
+    private static final Map<String, String> IMPERSONATION_BY_TOKEN = new ConcurrentHashMap<>();
+
+    /**
+     * Start impersonating: subsequent requests authenticated with this token will see
+     * the impersonated user's data instead of the real admin's.
+     */
+    public static void startImpersonating(String authTokenId, String impersonatedUserId) {
+        if (authTokenId != null && impersonatedUserId != null) {
+            IMPERSONATION_BY_TOKEN.put(authTokenId, impersonatedUserId);
+        }
+    }
+
+    /**
+     * Stop impersonating for the given token. Idempotent.
+     */
+    public static void stopImpersonating(String authTokenId) {
+        if (authTokenId != null) {
+            IMPERSONATION_BY_TOKEN.remove(authTokenId);
+        }
+    }
+
+    /**
+     * Returns the impersonated user ID for the given token, or null if not impersonating.
+     */
+    public static String getImpersonatedUserId(String authTokenId) {
+        return authTokenId == null ? null : IMPERSONATION_BY_TOKEN.get(authTokenId);
+    }
 
     /**
      * Returns true if the supplied request has an UserPrincipal.
@@ -54,13 +96,36 @@ public abstract class SecurityFilter implements Filter {
      *
      * @param request HTTP request
      * @param user nullable User to inject
+     * @param authTokenId authentication token id (used for impersonation lookup)
      */
-    private void injectUser(HttpServletRequest request, User user) {
+    private void injectUser(HttpServletRequest request, User user, String authTokenId) {
         // Check if the user is still valid
         if (user != null && user.getDeleteDate() == null && user.getDisableDate() == null) {
+            // If the admin started impersonating another user, load that user as the principal
+            // and remember the real admin in the principal so audit + stop-impersonation work.
+            String impersonatedUserId = getImpersonatedUserId(authTokenId);
+            if (impersonatedUserId != null && !impersonatedUserId.equals(user.getId())) {
+                User impersonated = new UserDao().getById(impersonatedUserId);
+                if (impersonated != null && impersonated.getDeleteDate() == null && impersonated.getDisableDate() == null) {
+                    UserPrincipal real = new UserPrincipal(user.getId(), user.getUsername());
+                    UserPrincipal imp = buildUserPrincipal(impersonated);
+                    imp.setRealUserId(real.getId());
+                    imp.setRealUserName(real.getName());
+                    request.setAttribute(PRINCIPAL_ATTRIBUTE, imp);
+                    if (authTokenId != null) {
+                        request.setAttribute(AUTH_TOKEN_ID_ATTRIBUTE, authTokenId);
+                    }
+                    return;
+                }
+                // The impersonated user no longer exists; clear stale state.
+                stopImpersonating(authTokenId);
+            }
             injectAuthenticatedUser(request, user);
         } else {
             injectAnonymousUser(request);
+        }
+        if (authTokenId != null) {
+            request.setAttribute(AUTH_TOKEN_ID_ATTRIBUTE, authTokenId);
         }
     }
 
@@ -71,6 +136,13 @@ public abstract class SecurityFilter implements Filter {
      * @param user User to inject
      */
     private void injectAuthenticatedUser(HttpServletRequest request, User user) {
+        request.setAttribute(PRINCIPAL_ATTRIBUTE, buildUserPrincipal(user));
+    }
+
+    /**
+     * Build a UserPrincipal for the given user, with groups, base functions, and email loaded.
+     */
+    private UserPrincipal buildUserPrincipal(User user) {
         UserPrincipal userPrincipal = new UserPrincipal(user.getId(), user.getUsername());
 
         // Add groups
@@ -97,7 +169,7 @@ public abstract class SecurityFilter implements Filter {
         // Add email
         userPrincipal.setEmail(user.getEmail());
 
-        request.setAttribute(PRINCIPAL_ATTRIBUTE, userPrincipal);
+        return userPrincipal;
     }
 
     /**
@@ -123,12 +195,12 @@ public abstract class SecurityFilter implements Filter {
     }
 
     @Override
-    public void doFilter(ServletRequest req, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+    public final void doFilter(ServletRequest req, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) req;
 
         if (!hasIdentifiedUser(request)) {
-            User user = authenticate(request);
-            injectUser(request, user);
+            AuthenticationResult result = authenticateWithToken(request);
+            injectUser(request, result.user, result.tokenId);
         }
 
         filterChain.doFilter(request, response);
@@ -141,5 +213,25 @@ public abstract class SecurityFilter implements Filter {
      * @return nullable User
      */
     protected abstract User authenticate(HttpServletRequest request);
+
+    /**
+     * Authenticates the user and remembers the token ID so impersonation can be applied later.
+     * Subclasses override this if they have a notion of token id.
+     */
+    protected AuthenticationResult authenticateWithToken(HttpServletRequest request) {
+        return new AuthenticationResult(authenticate(request), null);
+    }
+
+    /**
+     * Holder for the result of an authenticate call: the user, plus the token id if known.
+     */
+    protected static class AuthenticationResult {
+        final User user;
+        final String tokenId;
+        AuthenticationResult(User user, String tokenId) {
+            this.user = user;
+            this.tokenId = tokenId;
+        }
+    }
 
 }

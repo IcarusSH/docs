@@ -86,24 +86,31 @@ public class TokenBasedSecurityFilter extends SecurityFilter {
 
     @Override
     protected User authenticate(HttpServletRequest request) {
+        // Default single-call authenticate (no token id available).
+        // Prefer authenticateWithToken() below, which is overridden to also return the token id.
+        return null;
+    }
+
+    @Override
+    protected AuthenticationResult authenticateWithToken(HttpServletRequest request) {
         // Get the value of the client authentication token
         String authTokenId = extractAuthToken(request.getCookies());
         if (authTokenId == null) {
-            return null;
+            return new AuthenticationResult(null, null);
         }
 
         // Get the corresponding server token
         AuthenticationTokenDao authTokenDao = new AuthenticationTokenDao();
         AuthenticationToken authToken = authTokenDao.get(authTokenId);
         if (authToken == null) {
-            return null;
+            return new AuthenticationResult(null, null);
         }
 
         if (isTokenExpired(authToken)) {
             handleExpiredToken(authTokenDao, authTokenId);
-            return null;
+            return new AuthenticationResult(null, null);
         }
 
-        return new UserDao().getById(authToken.getUserId());
+        return new AuthenticationResult(new UserDao().getById(authToken.getUserId()), authTokenId);
     }
 }
