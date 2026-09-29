@@ -1,6 +1,7 @@
 package com.sismics.docs.rest.resource;
 
 import com.google.common.collect.Lists;
+import com.sismics.docs.core.util.SecurityUtil;
 import com.sismics.docs.rest.constant.BaseFunction;
 import com.sismics.rest.exception.ForbiddenClientException;
 import com.sismics.security.IPrincipal;
@@ -119,6 +120,15 @@ public abstract class BaseResource {
         }
         if (shareId != null) {
             targetIdList.add(shareId);
+        }
+        // Any user holding the ADMIN base function bypasses every ACL check, regardless of
+        // whether they are the seeded admin user (id="admin") or a regular user later promoted
+        // to the admin role. SecurityUtil.skipAclCheck recognises this sentinel.
+        if (principal instanceof UserPrincipal) {
+            Set<String> baseFunctionSet = ((UserPrincipal) principal).getBaseFunctionSet();
+            if (baseFunctionSet != null && baseFunctionSet.contains(BaseFunction.ADMIN.name())) {
+                targetIdList.add(SecurityUtil.ADMIN_BYPASS_SENTINEL);
+            }
         }
         return targetIdList;
     }

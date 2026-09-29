@@ -198,23 +198,31 @@ public class TagResource extends BaseResource {
         tag.setParentId(parentId);
         String id = tagDao.create(tag, principal.getId());
 
-        // Create read ACL
+        // Grant WRITE to the creator (WRITE implicitly includes lower permission levels)
         AclDao aclDao = new AclDao();
         Acl acl = new Acl();
-        acl.setPerm(PermType.READ);
-        acl.setType(AclType.USER);
-        acl.setSourceId(id);
-        acl.setTargetId(principal.getId());
-        aclDao.create(acl, principal.getId());
-
-        // Create write ACL
-        acl = new Acl();
         acl.setPerm(PermType.WRITE);
         acl.setType(AclType.USER);
         acl.setSourceId(id);
         acl.setTargetId(principal.getId());
         aclDao.create(acl, principal.getId());
-        
+
+        // Always grant WRITE to the seeded admin user and administrators group so that
+        // administrators have all permissions open on every new tag.
+        acl = new Acl();
+        acl.setPerm(PermType.WRITE);
+        acl.setType(AclType.USER);
+        acl.setSourceId(id);
+        acl.setTargetId("admin");
+        aclDao.create(acl, principal.getId());
+
+        acl = new Acl();
+        acl.setPerm(PermType.WRITE);
+        acl.setType(AclType.USER);
+        acl.setSourceId(id);
+        acl.setTargetId("administrators");
+        aclDao.create(acl, principal.getId());
+
         JsonObjectBuilder response = Json.createObjectBuilder()
                 .add("id", id);
         return Response.ok().entity(response.build()).build();
