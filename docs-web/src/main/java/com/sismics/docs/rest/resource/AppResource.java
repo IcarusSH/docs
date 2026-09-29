@@ -92,6 +92,7 @@ public class AppResource extends BaseResource {
         Boolean guestLogin = ConfigUtil.getConfigBooleanValue(ConfigType.GUEST_LOGIN);
         Boolean ocrEnabled = ConfigUtil.getConfigBooleanValue(ConfigType.OCR_ENABLED, true);
         Boolean casdoorEnabled = ConfigUtil.getConfigBooleanValue(ConfigType.CASDOOR_ENABLED, false);
+        Boolean watermarkEnabled = ConfigUtil.getConfigBooleanValue(ConfigType.WATERMARK_ENABLED, true);
         String defaultLanguage = ConfigUtil.getConfigStringValue(ConfigType.DEFAULT_LANGUAGE);
         UserDao userDao = new UserDao();
         DocumentDao documentDao = new DocumentDao();
@@ -107,6 +108,7 @@ public class AppResource extends BaseResource {
                 .add("guest_login", guestLogin)
                 .add("ocr_enabled", ocrEnabled)
                 .add("casdoor_enabled", casdoorEnabled)
+                .add("watermark_enabled", watermarkEnabled)
                 .add("default_language", defaultLanguage)
                 .add("queued_tasks", AppContext.getInstance().getQueuedTaskCount())
                 .add("total_memory", Runtime.getRuntime().totalMemory())
@@ -1022,6 +1024,58 @@ public class AppResource extends BaseResource {
             configDao.update(ConfigType.CASDOOR_ENABLED, Boolean.FALSE.toString());
         }
 
+        return Response.ok().build();
+    }
+
+    /**
+     * Get the document-viewer watermark configuration.
+     *
+     * @api {get} /app/config_watermark Get the watermark toggle
+     * @apiName GetAppConfigWatermark
+     * @apiGroup App
+     * @apiSuccess {Boolean} enabled True if the watermark overlay should be shown
+     * @apiPermission admin
+     *
+     * @return Response
+     */
+    @GET
+    @Path("config_watermark")
+    public Response getConfigWatermark() {
+        if (!authenticate()) {
+            throw new ForbiddenClientException();
+        }
+        checkBaseFunction(BaseFunction.ADMIN);
+
+        Boolean enabled = ConfigUtil.getConfigBooleanValue(ConfigType.WATERMARK_ENABLED, true);
+        return Response.ok().entity(Json.createObjectBuilder()
+                .add("enabled", enabled)
+                .build()).build();
+    }
+
+    /**
+     * Toggle the document-viewer watermark.
+     *
+     * @api {post} /app/config_watermark Configure the watermark toggle
+     * @apiName PostAppConfigWatermark
+     * @apiGroup App
+     * @apiParam {Boolean} enabled If true, overlay a username + timestamp watermark on the viewer
+     * @apiPermission admin
+     *
+     * @param enabled Whether the watermark should be enabled
+     * @return Response
+     */
+    @POST
+    @Path("config_watermark")
+    public Response configWatermark(@FormParam("enabled") Boolean enabled) {
+        if (!authenticate()) {
+            throw new ForbiddenClientException();
+        }
+        checkBaseFunction(BaseFunction.ADMIN);
+
+        if (enabled == null) {
+            throw new ClientException("ValidationError", "enabled is required");
+        }
+        new ConfigDao().update(ConfigType.WATERMARK_ENABLED, enabled.toString());
         return Response.ok().build();
     }
 }

@@ -52,6 +52,29 @@
   <!-- PDF viewer -->
   <iframe ng-src="{{ trustedFileUrl }}" class="pdf-viewer" scrolling="yes" ng-if="!error && file.mimetype == 'application/pdf'"></iframe>
 
+  <!-- Watermark overlay: covers the whole viewer. Repeats username + timestamp diagonally.
+       Only visible when app.watermark_enabled is true. pointer-events: none so the
+       buttons above remain clickable. -->
+  <div class="watermark-overlay" ng-show="app.watermark_enabled"
+       ng-style="{ 'position': 'absolute', 'inset': 0, 'overflow': 'hidden',
+                    'pointer-events': 'none', 'z-index': 10 }">
+    <div class="watermark-line"
+         ng-repeat="i in [1,2,3,4,5,6,7,8,9,10,11,12]"
+         ng-style="{ 'position': 'absolute',
+                      'left':  ($index * 12) + '%',
+                      'top':   ($index * 70) + 'px',
+                      'transform': 'rotate(-30deg)',
+                      'transform-origin': '0 0',
+                      'white-space': 'nowrap',
+                      'color': '#888',
+                      'opacity': 0.18,
+                      'font-size': '26px',
+                      'font-weight': '500',
+                      'pointer-events': 'none' }">
+      {{ userInfo.username }} · {{ 'now' | date:'yyyy-MM-dd HH:mm:ss' }}
+    </div>
+  </div>
+
   <!-- File not found -->
   <p class="well-lg" ng-show="error">
     <span class="fas fa-exclamation-triangle"></span>

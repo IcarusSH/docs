@@ -76,5 +76,11 @@ public enum ConfigType {
     CASDOOR_CLIENT_SECRET,
     CASDOOR_ORGANIZATION,
     CASDOOR_APPLICATION,
-    CASDOOR_DEFAULT_STORAGE
+    CASDOOR_DEFAULT_STORAGE,
+
+    /**
+     * Whether the per-document viewer overlays a username + timestamp watermark.
+     * Default true; admins toggle the value at /app/config_watermark.
+     */
+    WATERMARK_ENABLED
 }

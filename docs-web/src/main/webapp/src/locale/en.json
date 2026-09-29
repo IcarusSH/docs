@@ -289,6 +289,7 @@
     "menu_inbox": "Inbox scanning",
     "menu_ldap": "LDAP authentication",
     "menu_casdoor": "Casdoor SSO",
+    "menu_watermark": "Watermark",
     "menu_metadata": "Custom metadata",
     "menu_monitoring": "Monitoring",
     "ldap": {
@@ -315,6 +316,12 @@
       "application": "Application name (in Casdoor)",
       "default_storage": "Default storage for SSO-provisioned users",
       "saved": "Casdoor configuration saved successfully"
+    },
+    "watermark": {
+      "title": "Document viewer watermark",
+      "help": "When enabled, an overlay showing the viewer's username and a timestamp is drawn diagonally on top of the document viewer. Useful for reminding people who is reading or has screenshotted a document.",
+      "enabled": "Show username + timestamp on every page",
+      "saved": "Watermark setting saved"
     },
     "user": {
       "title": "Users management",

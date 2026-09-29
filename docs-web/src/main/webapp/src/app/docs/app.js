@@ -262,6 +262,15 @@ angular.module('docs',
         }
       }
     })
+    .state('settings.watermark', {
+      url: '/watermark',
+      views: {
+        'settings': {
+          templateUrl: 'partial/docs/settings.watermark.html',
+          controller: 'SettingsWatermark'
+        }
+      }
+    })
     .state('document', {
       url: '/document',
       abstract: true,

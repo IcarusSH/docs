@@ -257,6 +257,7 @@
     "menu_inbox": "收件箱扫描",
     "menu_server_logs": "服务器日志",
     "menu_casdoor": "Casdoor 单点登录",
+    "menu_watermark": "水印",
     "casdoor": {
       "title": "Casdoor 单点登录",
       "enabled": "启用 Casdoor 单点登录",
@@ -267,6 +268,12 @@
       "application": "应用名（在 Casdoor 中）",
       "default_storage": "SSO 首次登录用户的默认存储配额",
       "saved": "Casdoor 配置已保存"
+    },
+    "watermark": {
+      "title": "文档查看水印",
+      "help": "开启后会在文档查看器上以对角线方式叠加查看者的用户名和时间戳。提醒当前谁正在阅读或截屏。",
+      "enabled": "每页叠加用户名 + 时间戳",
+      "saved": "水印设置已保存"
     },
     "user": {
       "title": "用户 <small>管理</small>",

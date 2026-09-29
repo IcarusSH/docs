@@ -1,0 +1,24 @@
+<h2 translate="settings.watermark.title"></h2>
+
+<p class="text-muted" translate="settings.watermark.help"></p>
+
+<form class="form-horizontal" name="form" novalidate>
+  <div class="form-group">
+    <label class="col-sm-2 control-label" for="watermarkEnabled">{{ 'settings.watermark.enabled' | translate }}</label>
+    <div class="col-sm-7">
+      <input type="checkbox" id="watermarkEnabled" ng-model="watermark.enabled" />
+    </div>
+  </div>
+
+  <div class="form-group">
+    <div class="col-sm-offset-2 col-sm-10">
+      <button type="submit" class="btn btn-primary" ng-click="save()">
+        <span class="fas fa-pencil-alt"></span> {{ 'save' | translate }}
+      </button>
+    </div>
+  </div>
+</form>
+
+<div class="alert alert-success col-sm-9" ng-show="saveResult">
+  {{ saveResult }}
+</div>
