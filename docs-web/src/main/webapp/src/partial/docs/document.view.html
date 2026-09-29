@@ -17,6 +17,10 @@
   <div class="pull-right btn-group">
     <button class="btn btn-danger" ng-show="document.writable" ng-click="deleteDocument(document)"><span class="fas fa-trash"></span> {{ 'delete' | translate }}</button>
     <a href="#/document/edit/{{ document.id }}" ng-show="document.writable" class="btn btn-primary"><span class="fas fa-pencil-alt"></span> {{ 'edit' | translate }}</a>
+    <a href="#/document/view/{{ document.id }}/activity" class="btn btn-default"
+       uib-tooltip="{{ 'document.view.view_log' | translate }}">
+      <span class="fas fa-history"></span> {{ 'document.view.view_log' | translate }}
+    </a>
   </div>
 
   <div class="pull-right dropdown" uib-dropdown>

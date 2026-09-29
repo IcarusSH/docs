@@ -96,6 +96,7 @@
       "forbidden": "无权限",
       "download_files": "下载文档",
       "export_pdf": "以PDF格式导出",
+      "view_log": "查看日志",
       "by_creator": "由",
       "comments": "评论",
       "no_comments": "此文档暂无评论",
