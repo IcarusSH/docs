@@ -156,8 +156,7 @@
       "activity": {
         "activity": "Activity",
         "message": "Every action on this document is logged here."
-      },
-      "view_server_log": "Server logs"
+      }
     },
     "edit": {
       "document_edited_with_errors": "Document successfully edited but some files cannot be uploaded",
