@@ -112,14 +112,22 @@ public class ImpersonateResource extends BaseResource {
     }
 
     /**
-     * Ensures the caller is authenticated and has the ADMIN base function. Because the real
-     * principal here is the signed-in admin (we set impersonation in injectUser), this check
-     * enforces the rule "only admins can impersonate".
+     * Ensures the caller is authenticated and has the ADMIN base function. We allow the
+     * call when the principal is impersonating too — being in impersonation mode already
+     * proves the auth token belongs to an admin (because the only way to enter that mode is
+     * through POST /admin/impersonate, which itself requires ADMIN). Without this exception,
+     * /admin/impersonate/stop would 403 the moment an admin tries to leave impersonation,
+     * because the principal at that point is the impersonated (non-admin) user.
      */
     private void requireAdmin() {
         if (!authenticate()) {
             throw new ForbiddenClientException();
         }
-        checkBaseFunction(BaseFunction.ADMIN);
+        boolean isAdmin = hasBaseFunction(BaseFunction.ADMIN);
+        boolean impersonatingAdmin = principal instanceof com.sismics.security.UserPrincipal
+                && ((com.sismics.security.UserPrincipal) principal).isImpersonating();
+        if (!isAdmin && !impersonatingAdmin) {
+            throw new ForbiddenClientException();
+        }
     }
 }
