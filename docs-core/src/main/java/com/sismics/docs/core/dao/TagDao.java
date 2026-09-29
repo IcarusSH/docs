@@ -187,7 +187,8 @@ public class TagDao {
             parameterMap.put("id", criteria.getId());
         }
         if (criteria.getTargetIdList() != null && !SecurityUtil.skipAclCheck(criteria.getTargetIdList())) {
-            sb.append(" left join T_ACL a on a.ACL_TARGETID_C in (:targetIdList) and a.ACL_SOURCEID_C = t.TAG_ID_C and a.ACL_PERM_C = 'READ' and a.ACL_DELETEDATE_D is null ");
+            // Hierarchical perm: any of the four levels makes a tag visible in the list.
+            sb.append(" left join T_ACL a on a.ACL_TARGETID_C in (:targetIdList) and a.ACL_SOURCEID_C = t.TAG_ID_C and a.ACL_PERM_C in ('SEARCHABLE','READ','DOWNLOADABLE','WRITE') and a.ACL_DELETEDATE_D is null ");
             criteriaList.add("a.ACL_ID_C is not null");
             parameterMap.put("targetIdList", criteria.getTargetIdList());
         }

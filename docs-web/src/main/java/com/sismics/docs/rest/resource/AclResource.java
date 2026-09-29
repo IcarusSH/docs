@@ -73,7 +73,12 @@ public class AclResource extends BaseResource {
         
         // Validate input
         ValidationUtil.validateRequired(sourceId, "source");
-        PermType perm = PermType.valueOf(ValidationUtil.validateLength(permStr, "perm", 1, 30, false));
+        PermType perm;
+        try {
+            perm = PermType.valueOf(ValidationUtil.validateLength(permStr, "perm", 1, 30, false));
+        } catch (IllegalArgumentException e) {
+            throw new ClientException("ValidationError", "perm must be one of SEARCHABLE, READ, DOWNLOADABLE, WRITE");
+        }
         AclTargetType type = AclTargetType.valueOf(ValidationUtil.validateLength(typeStr, "type", 1, 10, false));
         targetName = ValidationUtil.validateLength(targetName, "target", 1, 50, false);
         
@@ -153,7 +158,12 @@ public class AclResource extends BaseResource {
         
         // Validate input
         ValidationUtil.validateRequired(sourceId, "source");
-        PermType perm = PermType.valueOf(ValidationUtil.validateLength(permStr, "perm", 1, 30, false));
+        PermType perm;
+        try {
+            perm = PermType.valueOf(ValidationUtil.validateLength(permStr, "perm", 1, 30, false));
+        } catch (IllegalArgumentException e) {
+            throw new ClientException("ValidationError", "perm must be one of SEARCHABLE, READ, DOWNLOADABLE, WRITE");
+        }
         ValidationUtil.validateRequired(targetId, "target");
 
         // Check permission on the source by the principal

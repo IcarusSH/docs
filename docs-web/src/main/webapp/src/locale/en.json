@@ -566,7 +566,8 @@
       "acl_target": "For",
       "acl_permission": "Permission",
       "add_permission": "Add a permission",
-      "search_user_group": "Search a user or group"
+      "search_user_group": "Search a user or group",
+      "acl_permission_help": "Higher levels imply lower ones: ticking Write also ticks Download, Read and Search. Unticking Search closes everything."
     },
     "auditlog": {
       "log_created": "created",

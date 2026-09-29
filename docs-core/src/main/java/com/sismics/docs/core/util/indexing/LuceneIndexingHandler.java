@@ -269,10 +269,12 @@ public class LuceneIndexingHandler implements IndexingHandler {
 
         // Add search criterias
         if (!SecurityUtil.skipAclCheck(criteria.getTargetIdList())) {
-            // Read permission is enough for searching
-            sb.append(" left join T_ACL a on a.ACL_TARGETID_C in (:targetIdList) and a.ACL_SOURCEID_C = d.DOC_ID_C and a.ACL_PERM_C = 'READ' and a.ACL_DELETEDATE_D is null ");
+            // Searchable is enough for finding documents in lists/search results.
+            // With the hierarchical permission model, READ/DOWNLOADABLE/WRITE all imply SEARCHABLE,
+            // so we match any of the four perm values.
+            sb.append(" left join T_ACL a on a.ACL_TARGETID_C in (:targetIdList) and a.ACL_SOURCEID_C = d.DOC_ID_C and a.ACL_PERM_C in ('SEARCHABLE','READ','DOWNLOADABLE','WRITE') and a.ACL_DELETEDATE_D is null ");
             sb.append(" left join T_DOCUMENT_TAG dta on dta.DOT_IDDOCUMENT_C = d.DOC_ID_C and dta.DOT_DELETEDATE_D is null ");
-            sb.append(" left join T_ACL a2 on a2.ACL_TARGETID_C in (:targetIdList) and a2.ACL_SOURCEID_C = dta.DOT_IDTAG_C and a2.ACL_PERM_C = 'READ' and a2.ACL_DELETEDATE_D is null ");
+            sb.append(" left join T_ACL a2 on a2.ACL_TARGETID_C in (:targetIdList) and a2.ACL_SOURCEID_C = dta.DOT_IDTAG_C and a2.ACL_PERM_C in ('SEARCHABLE','READ','DOWNLOADABLE','WRITE') and a2.ACL_DELETEDATE_D is null ");
             criteriaList.add("(a.ACL_ID_C is not null or a2.ACL_ID_C is not null)");
         }
         parameterMap.put("targetIdList", criteria.getTargetIdList());

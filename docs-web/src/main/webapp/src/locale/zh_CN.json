@@ -466,7 +466,8 @@
       "acl_target": "用于",
       "acl_permission": "允许",
       "add_permission": "添加一个许可",
-      "search_user_group": "搜索一个用户或组"
+      "search_user_group": "搜索一个用户或组",
+      "acl_permission_help": "高级别隐含低级别：勾选「可写」会自动勾选「可下载」、「可读」和「可检索」；取消勾选「可检索」会关闭所有权限。"
     },
     "auditlog": {
       "log_created": "创建",
