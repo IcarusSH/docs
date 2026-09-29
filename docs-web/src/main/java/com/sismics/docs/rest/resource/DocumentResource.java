@@ -29,6 +29,7 @@ import com.sismics.docs.core.model.context.AppContext;
 import com.sismics.docs.core.model.jpa.Document;
 import com.sismics.docs.core.model.jpa.File;
 import com.sismics.docs.core.model.jpa.User;
+import com.sismics.docs.core.util.AuditLogUtil;
 import com.sismics.docs.core.util.ConfigUtil;
 import com.sismics.docs.core.util.DocumentUtil;
 import com.sismics.docs.core.util.FileUtil;
@@ -184,6 +185,13 @@ public class DocumentResource extends BaseResource {
         DocumentDto documentDto = documentDao.getDocument(documentId, PermType.READ, getTargetIdList(shareId));
         if (documentDto == null) {
             throw new NotFoundException();
+        }
+
+        // Log the view event so it shows up in the document's Activity tab.
+        // We skip the log when the request is from a public share link so anonymous
+        // share consumers don't pollute the audit log.
+        if (shareId == null) {
+            AuditLogUtil.createViewLog(documentId, principal.getId());
         }
 
         JsonObjectBuilder document = createDocumentObjectBuilder(documentDto)

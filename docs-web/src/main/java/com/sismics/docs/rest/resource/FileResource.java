@@ -15,6 +15,7 @@ import com.sismics.docs.core.event.FileUpdatedAsyncEvent;
 import com.sismics.docs.core.model.context.AppContext;
 import com.sismics.docs.core.model.jpa.File;
 import com.sismics.docs.core.model.jpa.User;
+import com.sismics.docs.core.util.AuditLogUtil;
 import com.sismics.docs.core.util.DirectoryUtil;
 import com.sismics.docs.core.util.EncryptionUtil;
 import com.sismics.docs.core.util.FileUtil;
@@ -570,13 +571,19 @@ public class FileResource extends BaseResource {
             @QueryParam("share") String shareId,
             @QueryParam("size") String size) {
         authenticate();
-        
+
         if (size != null && !Lists.newArrayList("web", "thumb", "content").contains(size)) {
             throw new ClientException("SizeError", "Size must be web, thumb or content");
         }
 
         // Get the file
         File file = findFile(fileId, shareId);
+
+        // Log the download event so it shows up in the file's parent document activity tab.
+        // Thumbnail / preview requests ("size=thumb|web|content") are not logged to avoid noise.
+        if (size == null && shareId == null) {
+            AuditLogUtil.createDownloadLog(fileId, "File", principal.getId());
+        }
 
         // Get the stored file
         UserDao userDao = new UserDao();
@@ -676,7 +683,7 @@ public class FileResource extends BaseResource {
             @QueryParam("id") String documentId,
             @QueryParam("share") String shareId) {
         authenticate();
-        
+
         // Get the document
         DocumentDao documentDao = new DocumentDao();
         DocumentDto documentDto = documentDao.getDocument(documentId, PermType.READ, getTargetIdList(shareId));
@@ -688,6 +695,9 @@ public class FileResource extends BaseResource {
         FileDao fileDao = new FileDao();
         final List<File> fileList = fileDao.getByDocumentId(principal.getId(), documentId);
         String zipFileName = documentDto.getTitle().replaceAll("\\W+", "_");
+        if (shareId == null) {
+            AuditLogUtil.createDownloadLog(documentId, "Document", principal.getId());
+        }
         return sendZippedFiles(zipFileName, fileList);
     }
 

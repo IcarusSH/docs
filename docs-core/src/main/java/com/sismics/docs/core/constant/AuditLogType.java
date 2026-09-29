@@ -10,7 +10,7 @@ public enum AuditLogType {
      * Create.
      */
     CREATE,
-    
+
     /**
      * Update.
      */
@@ -19,5 +19,15 @@ public enum AuditLogType {
     /**
      * Delete.
      */
-    DELETE
+    DELETE,
+
+    /**
+     * View (a user opened a document).
+     */
+    VIEW,
+
+    /**
+     * Download (a user downloaded a file / file-zip / original).
+     */
+    DOWNLOAD
 }

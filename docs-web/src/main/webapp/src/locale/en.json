@@ -153,10 +153,11 @@
         "acl_target": "For",
         "acl_permission": "Permission"
       },
-      "log": {
-        "log": "Logs",
+      "activity": {
+        "activity": "Activity",
         "message": "Every action on this document is logged here."
-      }
+      },
+      "view_server_log": "Server logs"
     },
     "edit": {
       "document_edited_with_errors": "Document successfully edited but some files cannot be uploaded",
@@ -591,6 +592,8 @@
       "log_created": "created",
       "log_updated": "updated",
       "log_deleted": "deleted",
+      "log_viewed": "viewed",
+      "log_downloaded": "downloaded",
       "Acl": "ACL",
       "Comment": "Comment",
       "Document": "Document",
