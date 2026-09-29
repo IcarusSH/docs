@@ -610,12 +610,31 @@ public class UserResource extends BaseResource {
             for (GroupDto groupDto : groupDtoList) {
                 groups.add(groupDto.getName());
             }
-            
+
             response.add("base_functions", baseFunctions)
                     .add("groups", groups)
                     .add("is_default_password", hasBaseFunction(BaseFunction.ADMIN) && Constants.DEFAULT_ADMIN_PASSWORD.equals(user.getPassword()));
+
+            // Impersonation status: when this principal is an admin who has used the
+            // "log in as" feature, surface the real signed-in user info so the UI can show a
+            // banner with a "stop impersonating" action.
+            if (principal instanceof UserPrincipal) {
+                UserPrincipal up = (UserPrincipal) principal;
+                response.add("impersonating", up.isImpersonating());
+                if (up.isImpersonating()) {
+                    response.add("real_user_id", up.getRealUserId() == null ? "" : up.getRealUserId());
+                    response.add("real_username", up.getRealUserName() == null ? "" : up.getRealUserName());
+                } else {
+                    response.add("real_user_id", "");
+                    response.add("real_username", "");
+                }
+            } else {
+                response.add("impersonating", false);
+                response.add("real_user_id", "");
+                response.add("real_username", "");
+            }
         }
-        
+
         return Response.ok().entity(response.build()).build();
     }
 

@@ -116,6 +116,20 @@
   <body translate-cloak ng-cloak>
     <onboarding-popover ng-if="onboardingEnabled" enabled="onboardingEnabled" steps="onboardingSteps"></onboarding-popover>
 
+    <!-- Impersonation banner: shown whenever the current principal is being impersonated
+         by an admin. Offers a one-click "stop" action. -->
+    <div class="alert alert-warning impersonate-banner"
+         ng-show="userInfo.impersonating" role="alert" style="margin-bottom: 0;">
+      <div class="container">
+        <span class="fas fa-user-secret"></span>
+        <strong>{{ 'impersonate.banner_title' | translate }}</strong>
+        <span translate="impersonate.banner_message" translate-values="{ username: userInfo.username }"></span>
+        <button class="btn btn-warning btn-xs pull-right" type="button" ng-click="stopImpersonating($event)">
+          <span class="fas fa-sign-out-alt"></span> {{ 'impersonate.stop' | translate }}
+        </button>
+      </div>
+    </div>
+
     <nav class="navbar navbar-default" role="navigation" ng-controller="Navigation">
       <div class="navbar-header">
         <button type="button" class="navbar-toggle"

@@ -30,6 +30,11 @@
     "error_title": "密码更改出错",
     "error_message": "您的密码恢复请求已过期，请在登录页面上提交新的请求"
   },
+  "impersonate": {
+    "banner_title": "正在模拟用户：",
+    "banner_message": "您正以 {{ username }} 身份浏览 Teedy。",
+    "stop": "停止模拟"
+  },
   "index": {
     "toggle_navigation": "切换导航",
     "nav_documents": "文档",
@@ -267,9 +272,15 @@
       "add_user": "添加用户",
       "username": "用户名",
       "create_date": "创建日期",
+      "actions": "操作",
       "totp_enabled": "为该帐号启用双身份认证",
       "import_csv": "导入 CSV",
       "export_csv": "导出 CSV",
+      "impersonate_btn": "以此用户身份登录",
+      "impersonate_confirm_title": "模拟用户",
+      "impersonate_confirm_message": "即将以 {{ username }} 身份登录。模拟期间可通过页面顶部黄色横幅随时停止。是否继续？",
+      "impersonate_failed_title": "模拟失败",
+      "impersonate_failed_message": "无法开始模拟该用户。",
       "import_csv_title": "从 CSV 导入用户",
       "import_csv_help": "请上传一个包含以下列的 CSV 文件：",
       "import_csv_columns_help": "username（必填）、email（必填）、role（admin|user）、storage_quota_mb（必填整数）、update（可选：skip|overwrite|patch，默认 skip）。",

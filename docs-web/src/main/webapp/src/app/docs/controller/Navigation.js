@@ -3,7 +3,7 @@
 /**
  * Navigation controller.
  */
-angular.module('docs').controller('Navigation', function($scope, $state, $stateParams, $rootScope, User) {
+angular.module('docs').controller('Navigation', function($scope, $state, $stateParams, $rootScope, User, Restangular) {
   User.userInfo().then(function(data) {
     $rootScope.userInfo = data;
     if (data.anonymous) {
@@ -29,5 +29,16 @@ angular.module('docs').controller('Navigation', function($scope, $state, $stateP
       $state.go('main');
     });
     $event.preventDefault();
+  };
+
+  /**
+   * Stop impersonating (when the banner is up). Reloads so the navigation/ACL
+   * state reflects the real admin again.
+   */
+  $scope.stopImpersonating = function($event) {
+    if ($event) $event.preventDefault();
+    Restangular.one('admin/impersonate/stop').post('').then(function() {
+      window.location.reload();
+    });
   };
 });

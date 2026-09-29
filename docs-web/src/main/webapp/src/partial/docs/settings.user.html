@@ -19,6 +19,7 @@
         <tr>
           <th>{{ 'settings.user.username' | translate }}</th>
           <th>{{ 'settings.user.create_date' | translate }}</th>
+          <th style="width: 60px">{{ 'settings.user.actions' | translate }}</th>
         </tr>
       </thead>
       <tbody>
@@ -30,6 +31,14 @@
             <span class="fas fa-lock" ng-show="user.totp_enabled" uib-tooltip="{{ 'settings.user.totp_enabled' | translate }}"></span>
           </td>
           <td>{{ user.create_date | date: dateFormat }}</td>
+          <td ng-click="$event.stopPropagation()">
+            <button class="btn btn-xs btn-warning" type="button"
+                    ng-click="impersonate(user)"
+                    ng-show="user.username !== 'admin' && !user.disabled"
+                    uib-tooltip="{{ 'settings.user.impersonate_btn' | translate }}">
+              <span class="fas fa-user-secret"></span>
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>

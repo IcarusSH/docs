@@ -30,6 +30,11 @@
     "error_title": "Error changing your password",
     "error_message": "Your password recovery request is expired, please ask for a new one on the login page"
   },
+  "impersonate": {
+    "banner_title": "Impersonation in effect:",
+    "banner_message": "you are viewing Teedy as {{ username }}.",
+    "stop": "Stop impersonating"
+  },
   "index": {
     "toggle_navigation": "Toggle navigation",
     "nav_documents": "Documents",
@@ -315,9 +320,15 @@
       "add_user": "Add a user",
       "username": "Username",
       "create_date": "Create date",
+      "actions": "Actions",
       "totp_enabled": "Two-factor authentication enabled for this account",
       "import_csv": "Import CSV",
       "export_csv": "Export CSV",
+      "impersonate_btn": "Log in as this user",
+      "impersonate_confirm_title": "Impersonate user",
+      "impersonate_confirm_message": "You are about to log in as {{ username }}. You can stop impersonating at any time via the yellow banner at the top of the page. Continue?",
+      "impersonate_failed_title": "Impersonation failed",
+      "impersonate_failed_message": "Could not start impersonating that user.",
       "import_csv_title": "Import users from CSV",
       "import_csv_help": "Upload a CSV file with the following columns:",
       "import_csv_columns_help": "username (required), email (required), role (admin|user), storage_quota_mb (required integer), update (optional: skip|overwrite|patch, default skip).",
