@@ -14,10 +14,50 @@
 </div>
 
 <h2 translate="settings.monitoring.server_logs"></h2>
+
+<form class="form-inline" ng-submit="reloadLogs()">
+  <div class="form-group">
+    <label class="control-label" for="logLevel">{{ 'settings.monitoring.log_level' | translate }}</label>
+    <select class="form-control" id="logLevel" ng-model="logFilter.level"
+            ng-options="l.value as l.label for l in [
+              {value:'', label:'all'},
+              {value:'ERROR', label:'ERROR'},
+              {value:'WARN', label:'WARN'},
+              {value:'INFO', label:'INFO'},
+              {value:'DEBUG', label:'DEBUG'}
+            ]"></select>
+  </div>
+  <div class="form-group">
+    <label class="control-label" for="logTag">{{ 'settings.monitoring.log_tag' | translate }}</label>
+    <input type="text" class="form-control" id="logTag" ng-model="logFilter.tag"
+           placeholder="{{ 'settings.monitoring.log_tag_placeholder' | translate }}" />
+  </div>
+  <div class="form-group">
+    <label class="control-label" for="logMessage">{{ 'settings.monitoring.log_message' | translate }}</label>
+    <input type="text" class="form-control" id="logMessage" ng-model="logFilter.message"
+           placeholder="{{ 'settings.monitoring.log_message_placeholder' | translate }}" />
+  </div>
+  <div class="form-group">
+    <label class="control-label" for="logLimit">{{ 'settings.monitoring.log_limit' | translate }}</label>
+    <input type="number" class="form-control" id="logLimit" ng-model="logFilter.limit" min="1" max="10000" style="width: 90px;" />
+  </div>
+  <button type="submit" class="btn btn-primary">
+    <span class="fas fa-filter"></span> {{ 'settings.monitoring.log_filter' | translate }}
+  </button>
+  <a class="btn btn-default" ng-href="{{ logDownloadUrl() }}" download>
+    <span class="fas fa-download"></span> {{ 'settings.monitoring.log_download' | translate }}
+  </a>
+</form>
+
+<p ng-show="logTotal !== undefined">
+  {{ 'settings.monitoring.log_total' | translate: { count: logTotal } }}
+</p>
+
 <table class="table table-hover table-logs">
   <thead>
     <tr>
       <th>{{ 'settings.monitoring.log_date' | translate }}</th>
+      <th>{{ 'settings.monitoring.log_level' | translate }}</th>
       <th>{{ 'settings.monitoring.log_tag' | translate }}</th>
       <th>{{ 'settings.monitoring.log_message' | translate }}</th>
     </tr>
@@ -26,6 +66,7 @@
     <tr ng-repeat="log in logs"
       ng-class="{ info: log.level == 'INFO' || log.level == 'DEBUG', warning: log.level == 'WARN', danger: log.level == 'ERROR' || log.level == 'FATAL' }">
       <td>{{ log.date | date: dateTimeFormat }}</td>
+      <td>{{ log.level }}</td>
       <td>{{ log.tag }}</td>
       <td class="cell-message">{{ log.message }}</td>
     </tr>

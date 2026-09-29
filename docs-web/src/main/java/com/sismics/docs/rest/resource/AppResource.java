@@ -33,6 +33,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Level;
@@ -40,6 +41,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.text.MessageFormat;
@@ -565,7 +570,8 @@ public class AppResource extends BaseResource {
             @QueryParam("tag") String tag,
             @QueryParam("message") String message,
             @QueryParam("limit") Integer limit,
-            @QueryParam("offset") Integer offset) {
+            @QueryParam("offset") Integer offset,
+            @QueryParam("format") String format) {
         if (!authenticate()) {
             throw new ForbiddenClientException();
         }
@@ -587,6 +593,39 @@ public class AppResource extends BaseResource {
 
         PaginatedList<LogEntry> paginatedList = PaginatedLists.create(limit, offset);
         memoryAppender.find(logCriteria, paginatedList);
+
+        if ("text".equalsIgnoreCase(format)) {
+            // Stream a plain-text log file for download.
+            final PaginatedList<LogEntry> finalList = paginatedList;
+            StreamingOutput stream = os -> {
+                Writer w = new OutputStreamWriter(os, StandardCharsets.UTF_8);
+                try {
+                    w.write("Teedy server log — exported " + new Date() + "\n");
+                    w.write("Filter: level>=" + StringUtils.stripToNull(minLevel)
+                            + " tag=" + StringUtils.stripToNull(tag)
+                            + " message~" + StringUtils.stripToNull(message) + "\n");
+                    w.write("Entries: " + finalList.getResultCount() + "\n");
+                    w.write("------------------------------------------------------------\n");
+                    for (LogEntry logEntry : finalList.getResultList()) {
+                        w.write(new Date(logEntry.getTimestamp()).toString());
+                        w.write(' ');
+                        w.write(logEntry.getLevel().toString());
+                        w.write(' ');
+                        w.write('[');
+                        w.write(logEntry.getTag());
+                        w.write("] ");
+                        w.write(logEntry.getMessage());
+                        w.write('\n');
+                    }
+                } finally {
+                    try { w.close(); } catch (IOException ignored) { }
+                }
+            };
+            return Response.ok(stream, "text/plain; charset=UTF-8")
+                    .header("Content-Disposition", "attachment; filename=\"teedy-server.log\"")
+                    .build();
+        }
+
         JsonArrayBuilder logs = Json.createArrayBuilder();
         for (LogEntry logEntry : paginatedList.getResultList()) {
             logs.add(Json.createObjectBuilder()

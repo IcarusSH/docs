@@ -427,6 +427,26 @@
       "test_success": "与收件箱的连接成功（{{count}}消息）",
       "test_fail": "连接到收件箱时发生错误，请检查参数"
     },
+    "monitoring": {
+      "background_tasks": "后台任务",
+      "queued_tasks": "当前有 {{ count }} 个待处理任务。",
+      "queued_tasks_explain": "文件处理、缩略图生成、索引更新、OCR 都是后台任务。大量未处理任务会导致搜索结果不完整。",
+      "server_logs": "服务器日志",
+      "log_date": "日期",
+      "log_level": "级别",
+      "log_tag": "标签",
+      "log_message": "信息",
+      "log_tag_placeholder": "子串",
+      "log_message_placeholder": "子串",
+      "log_limit": "上限",
+      "log_filter": "筛选",
+      "log_download": "下载为文本",
+      "log_total": "匹配条目数：{{ count }}",
+      "indexing": "索引",
+      "indexing_info": "如果您发现搜索结果有偏差，可以尝试完整重建索引。在重建完成之前搜索结果不完整。",
+      "start_reindexing": "开始重建索引",
+      "reindexing_started": "索引重建已启动，请等待所有后台任务清空。"
+    },
     "log": {
       "title": "服务器 <small>日志</small>",
       "date": "日期",
