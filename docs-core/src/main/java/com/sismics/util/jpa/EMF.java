@@ -60,12 +60,19 @@ public final class EMF {
     }
     
     private static Properties getEntityManagerProperties() {
-        // Use properties file if exists
+        // 环境变量优先级最高：只要 DATABASE_URL 显式指定，就用它（不论 classpath 是否有 hibernate.properties）
+        // 这样测试服务器 / Docker 部署都能通过 DATABASE_* 环境变量切换 PG，而不需要改源码。
+        if (!Strings.isNullOrEmpty(System.getenv("DATABASE_URL"))) {
+            log.info("Configuring EntityManager from environment parameters");
+            return envProperties();
+        }
+
+        // 否则回落到 classpath 里的 hibernate.properties（dev profile 默认走 H2）
         try {
             URL hibernatePropertiesUrl = EMF.class.getResource("/hibernate.properties");
             if (hibernatePropertiesUrl != null) {
                 log.info("Configuring EntityManager from hibernate.properties");
-                
+
                 InputStream is = hibernatePropertiesUrl.openStream();
                 Properties properties = new Properties();
                 properties.load(is);
@@ -76,6 +83,15 @@ public final class EMF {
         }
         
         // Use environment parameters
+        return envProperties();
+    }
+
+    /**
+     * 从环境变量构建 Hibernate Properties。
+     * DATABASE_URL 未设置时回落到 H2 嵌入式（仅供测试）。
+     * 当 DATABASE_URL 已设置时强制走 PG，忽略 classpath 中的 hibernate.properties。
+     */
+    private static Properties envProperties() {
         String databaseUrl = System.getenv("DATABASE_URL");
         String databaseUsername = System.getenv("DATABASE_USER");
         String databasePassword = System.getenv("DATABASE_PASSWORD");

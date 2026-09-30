@@ -1,18 +1,56 @@
 version: '3'
+
+# 所有变量从仓库根的 .env 文件读取（docker compose 原生支持）。
+# 第一次使用：cp .env.example .env 并填实际值。
+
 services:
-# Teedy Application
+# Teedy 应用（PostgreSQL 版）
   teedy-server:
-    image: sismics/docs:v1.10
+    image: sismics/docs:${TEEDY_IMAGE_TAG:-v1.11}
     restart: unless-stopped
     ports:
-      # Map internal port to host
-      - 8080:8080
+      - "${TEEDY_PORT:-8080}:8080"
+    env_file:
+      - .env
     environment:
-      # Base url to be used
-      DOCS_BASE_URL: "https://docs.example.com"
-      # Set the admin email
-      DOCS_ADMIN_EMAIL_INIT: "admin@example.com"
-      # Set the admin password (in this example: "superSecure")
-      DOCS_ADMIN_PASSWORD_INIT: "$$2a$$05$$PcMNUbJvsk7QHFSfEIDaIOjk1VI9/E7IPjTKx.jkjPxkx2EOKSoPS"
+      # docker compose 的 .env 用于变量插值，env_file 用于注入到容器进程。
+      # DATABASE_* 三项在 .env 里已有，env_file 会把全部键注入容器。
+      # 下面是必需项的明确引用，便于一眼看出：
+      DOCS_BASE_URL: "${DOCS_BASE_URL}"
+      DOCS_ADMIN_EMAIL_INIT: "${DOCS_ADMIN_EMAIL_INIT}"
+      DOCS_ADMIN_PASSWORD_INIT: "${DOCS_ADMIN_PASSWORD_INIT}"
+      DATABASE_URL: "${DATABASE_URL}"
+      DATABASE_USER: "${DATABASE_USER}"
+      DATABASE_PASSWORD: "${DATABASE_PASSWORD}"
+      DATABASE_POOL_SIZE: "${DATABASE_POOL_SIZE:-10}"
     volumes:
       - ./docs/data:/data
+    networks:
+      - teedy-internal
+      - teedy-internet
+    depends_on:
+      - teedy-db
+
+# PostgreSQL 数据库
+  teedy-db:
+    image: postgres:${POSTGRES_TAG:-13}-alpine
+    restart: unless-stopped
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_USER: "${DATABASE_USER}"
+      POSTGRES_PASSWORD: "${DATABASE_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB:-teedy}"
+    volumes:
+      - ./docs/db:/var/lib/postgresql/data
+    networks:
+      - teedy-internal
+
+networks:
+  # 数据库专用内部网络，不通外网
+  teedy-internal:
+    driver: bridge
+    internal: true
+  # 应用走外网（OCR/邮件/Casdoor 等需要外联的功能）
+  teedy-internet:
+    driver: bridge
