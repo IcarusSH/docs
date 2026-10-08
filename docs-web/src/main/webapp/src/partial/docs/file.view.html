@@ -34,7 +34,7 @@
   </div>
 </div>
 
-<div class="text-center" style="position: relative;" ng-if="$stateParams.fileId">
+<div class="text-center" style="position: relative; min-height: 80vh;" ng-if="$stateParams.fileId">
   <!-- Standard preview -->
   <img ng-src="../api/file/{{ $stateParams.fileId }}/data?size=web"
        ng-init="error = false"
