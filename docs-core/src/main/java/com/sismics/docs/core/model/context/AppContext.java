@@ -10,6 +10,7 @@ import com.sismics.docs.core.dao.ConfigDao;
 import com.sismics.docs.core.dao.UserDao;
 import com.sismics.docs.core.listener.async.*;
 import com.sismics.docs.core.model.jpa.User;
+import com.sismics.docs.core.service.BorrowExpiryService;
 import com.sismics.docs.core.service.FileService;
 import com.sismics.docs.core.service.FileSizeService;
 import com.sismics.docs.core.service.InboxService;
@@ -74,6 +75,12 @@ public class AppContext {
     private FileSizeService fileSizeService;
 
     /**
+     * Borrow expiry service. Sweeps approved borrow requests past their BOR_EXPIRYDATE_D
+     * and soft-deletes their associated temporary ACLs.
+     */
+    private BorrowExpiryService borrowExpiryService;
+
+    /**
      * Asynchronous executors.
      */
     private List<ThreadPoolExecutor> asyncExecutorList;
@@ -114,6 +121,11 @@ public class AppContext {
         fileSizeService = new FileSizeService();
         fileSizeService.startAsync();
         fileSizeService.awaitRunning();
+
+        // Start borrow expiry service (sweeps approved-but-expired borrow requests every minute)
+        borrowExpiryService = new BorrowExpiryService();
+        borrowExpiryService.startAsync();
+        borrowExpiryService.awaitRunning();
 
         // Register fonts
         PdfUtil.registerFonts();
@@ -286,6 +298,10 @@ public class AppContext {
 
         if (fileSizeService != null) {
             fileSizeService.stopAsync();
+        }
+
+        if (borrowExpiryService != null) {
+            borrowExpiryService.stopAsync();
         }
 
         instance = null;

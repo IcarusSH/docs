@@ -1,0 +1,56 @@
+<div class="modal-header">
+  <h3 class="modal-title">{{ 'document.borrow.title' | translate }}</h3>
+</div>
+<div class="modal-body">
+  <p>{{ 'document.borrow.message' | translate }}</p>
+
+  <div class="form-group">
+    <label for="borrow-approver">{{ 'document.borrow.approver' | translate }}</label>
+    <input type="text" class="form-control" id="borrow-approver"
+           ng-model="approverUsername"
+           uib-typeahead="u as u.username for u in getApproverTypeahead($viewValue)"
+           typeahead-loading="loadingApprovers"
+           typeahead-wait-ms="300"
+           typeahead-min-length="1"
+           required />
+    <span ng-show="loadingApprovers" class="fas fa-spinner fa-spin"></span>
+  </div>
+
+  <div class="form-group">
+    <label>{{ 'document.borrow.perm' | translate }}</label>
+    <div class="radio">
+      <label>
+        <input type="radio" ng-model="perm" value="READ" />
+        {{ 'document.borrow.perm_READ' | translate }}
+      </label>
+    </div>
+    <div class="radio">
+      <label>
+        <input type="radio" ng-model="perm" value="DOWNLOADABLE" />
+        {{ 'document.borrow.perm_DOWNLOADABLE' | translate }}
+      </label>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="borrow-duration">{{ 'document.borrow.duration' | translate }}</label>
+    <input type="number" class="form-control" id="borrow-duration"
+           ng-model="durationDays" min="1" max="30" required />
+  </div>
+
+  <div class="form-group">
+    <label for="borrow-note">{{ 'document.borrow.note' | translate }}</label>
+    <textarea class="form-control" id="borrow-note" ng-model="note"
+              maxlength="2000" rows="3"></textarea>
+  </div>
+
+  <div class="alert alert-danger" ng-show="error">{{ error }}</div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-default" ng-click="cancel()">{{ 'cancel' | translate }}</button>
+  <button class="btn btn-primary" ng-click="submit()"
+          ng-disabled="!approverUsername || !perm || !durationDays">
+    <span class="fas fa-paper-plane"></span>
+    {{ 'document.borrow.submit' | translate }}
+  </button>
+</div>

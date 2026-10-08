@@ -185,6 +185,23 @@
       "title": "共享文档",
       "message": "如果您想多次共享同一文档，请将共享命名.",
       "submit": "共享"
+    },
+    "borrow": {
+      "title": "申请文档访问权限",
+      "message": "申请对本文档的临时访问权限。需要审批人通过后才能查看。",
+      "approver": "审批人（用户名）",
+      "perm": "申请的权限",
+      "perm_READ": "仅可读",
+      "perm_DOWNLOADABLE": "可读 + 可下载",
+      "duration": "借阅时长（天，1-30）",
+      "note": "原因 / 备注",
+      "submit": "提交申请",
+      "request_button": "申请借阅",
+      "approve": "批准",
+      "reject": "拒绝",
+      "notif_text": "申请 {{ perm }} 权限，借阅 {{ duration_days }} 天",
+      "no_pending": "暂无待审批借阅",
+      "pending_header": "待审批借阅"
     }
   },
   "file": {

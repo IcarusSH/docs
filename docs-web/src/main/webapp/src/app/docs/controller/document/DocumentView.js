@@ -11,6 +11,28 @@ angular.module('docs').controller('DocumentView', function ($scope, $rootScope, 
     $scope.error = response;
   });
 
+  /**
+   * Show the "Request borrow" button only when the user can find the document but
+   * cannot read or write it. (If they already have READ+ access the borrow flow is
+   * meaningless.)
+   */
+  $scope.canRequestBorrow = function () {
+    return $scope.document && $scope.document.searchable === true
+        && !$scope.document.readable && !$scope.document.writable;
+  };
+
+  /**
+   * Open the borrow-request modal.
+   */
+  $scope.requestBorrow = function () {
+    if (!$scope.document) return;
+    $uibModal.open({
+      templateUrl: 'partial/docs/document.borrow.html',
+      controller: 'DocumentModalBorrow',
+      resolve: { document: function () { return $scope.document; } }
+    });
+  };
+
   // Load comments from server
   Restangular.one('comment', $stateParams.id).get().then(function (data) {
     $scope.comments = data.comments;

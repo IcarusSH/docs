@@ -10,9 +10,15 @@ public enum AclType {
      * User created ACL.
      */
     USER,
-    
+
     /**
      * ACL created by the routing module.
      */
-    ROUTING
+    ROUTING,
+
+    /**
+     * ACL granted by an approved borrow request. Same shape as USER but tagged so the
+     * BorrowExpiryService can find and soft-delete it when the borrow expires.
+     */
+    BORROW
 }

@@ -204,6 +204,23 @@
       "title": "Share document",
       "message": "Name the sharing if you want to share multiple times the same document.",
       "submit": "Share"
+    },
+    "borrow": {
+      "title": "Request document access",
+      "message": "Request temporary access to this document. An approver must approve before you can view it.",
+      "approver": "Approver (username)",
+      "perm": "Permission requested",
+      "perm_READ": "Read only",
+      "perm_DOWNLOADABLE": "Read + Download",
+      "duration": "Borrow duration (days, 1-30)",
+      "note": "Reason / note",
+      "submit": "Submit request",
+      "request_button": "Request borrow",
+      "approve": "Approve",
+      "reject": "Reject",
+      "notif_text": "requests {{ perm }} access for {{ duration_days }} days",
+      "no_pending": "No pending borrow requests",
+      "pending_header": "Pending borrow requests"
     }
   },
   "file": {

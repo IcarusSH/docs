@@ -224,6 +224,18 @@ public class DocumentResource extends BaseResource {
         // Add ACL
         AclUtil.addAcls(document, documentId, getTargetIdList(shareId));
 
+        // Add computed permission flags so the frontend can show buttons based on the
+        // current user's effective level (e.g. hide "Request borrow" if user already
+        // has READ+, hide "Download" if user only has READ).
+        if (!principal.isAnonymous()) {
+            AclDao aclDao = new AclDao();
+            document
+                    .add("searchable", aclDao.checkPermission(documentId, PermType.SEARCHABLE, getTargetIdList(shareId)))
+                    .add("readable", aclDao.checkPermission(documentId, PermType.READ, getTargetIdList(shareId)))
+                    .add("downloadable", aclDao.checkPermission(documentId, PermType.DOWNLOADABLE, getTargetIdList(shareId)))
+                    .add("writable", aclDao.checkPermission(documentId, PermType.WRITE, getTargetIdList(shareId)));
+        }
+
         // Add computed ACL
         if (tagDtoList != null) {
             JsonArrayBuilder aclList = Json.createArrayBuilder();

@@ -3,7 +3,7 @@
 /**
  * Navigation controller.
  */
-angular.module('docs').controller('Navigation', function($scope, $state, $stateParams, $rootScope, $http, User, Restangular) {
+angular.module('docs').controller('Navigation', function($scope, $state, $stateParams, $rootScope, $http, $interval, User, Restangular) {
   User.userInfo().then(function(data) {
     $rootScope.userInfo = data;
     if (data.anonymous) {
@@ -17,6 +17,32 @@ angular.module('docs').controller('Navigation', function($scope, $state, $stateP
       }
     }
   });
+
+  // Pending borrow requests targeting me as approver. Refreshed every 60s.
+  $scope.pendingBorrows = [];
+  function refreshPendingBorrows() {
+    if (!$rootScope.userInfo || $rootScope.userInfo.anonymous || $rootScope.userInfo.username === 'guest') {
+      $scope.pendingBorrows = [];
+      return;
+    }
+    Restangular.one('borrow/pending').get().then(function(data) {
+      $scope.pendingBorrows = data;
+    }, function() {
+      // Non-fatal: keep stale value on transient error.
+    });
+  }
+  refreshPendingBorrows();
+  var pollHandle = $interval(refreshPendingBorrows, 60000);
+  $scope.$on('$destroy', function() {
+    if (pollHandle) { $interval.cancel(pollHandle); }
+  });
+
+  $scope.approveBorrow = function(req) {
+    Restangular.one('borrow/' + req.id + '/approve').post('').then(refreshPendingBorrows);
+  };
+  $scope.rejectBorrow = function(req) {
+    Restangular.one('borrow/' + req.id + '/reject').post('').then(refreshPendingBorrows);
+  };
 
   /**
    * User logout.
