@@ -249,7 +249,7 @@ public class FileResource extends BaseResource {
         }
 
         // Get the file
-        File file = findFile(id, null);
+        File file = findFile(id, null, PermType.WRITE);
 
         // Validate input data
         name = ValidationUtil.validateLength(name, "name", 1, 200, false);
@@ -469,7 +469,7 @@ public class FileResource extends BaseResource {
         }
 
         // Get versions
-        File file = findFile(id, null);
+        File file = findFile(id, null, PermType.READ);
         FileDao fileDao = new FileDao();
         List<File> fileList = Lists.newArrayList(file);
         if (file.getVersionId() != null) {
@@ -516,7 +516,7 @@ public class FileResource extends BaseResource {
         }
 
         // Get the file
-        File file = findFile(id, null);
+        File file = findFile(id, null, PermType.WRITE);
 
         // Delete the file
         FileDao fileDao = new FileDao();
@@ -576,8 +576,15 @@ public class FileResource extends BaseResource {
             throw new ClientException("SizeError", "Size must be web, thumb or content");
         }
 
+        // Permission gate: original file (no size) and OCR text (size=content) require DOWNLOADABLE;
+        // thumbnails / previews (size=web|thumb) only require READ so READ-only users can browse.
+        // ?size=null   → DOWNLOADABLE (raw download)
+        // ?size=content → DOWNLOADABLE (extracted OCR text — same sensitivity as the original)
+        // ?size=web|thumb → READ (preview image, no sensitive payload)
+        PermType requiredPerm = (size == null || size.equals("content")) ? PermType.DOWNLOADABLE : PermType.READ;
+
         // Get the file
-        File file = findFile(fileId, shareId);
+        File file = findFile(fileId, shareId, requiredPerm);
 
         // Log the download event so it shows up in the file's parent document activity tab.
         // Thumbnail / preview requests ("size=thumb|web|content") are not logged to avoid noise.
@@ -686,7 +693,8 @@ public class FileResource extends BaseResource {
 
         // Get the document
         DocumentDao documentDao = new DocumentDao();
-        DocumentDto documentDto = documentDao.getDocument(documentId, PermType.READ, getTargetIdList(shareId));
+        // ZIP 是原始文件集合的打包下载，需要 DOWNLOADABLE 而不仅是 READ
+        DocumentDto documentDto = documentDao.getDocument(documentId, PermType.DOWNLOADABLE, getTargetIdList(shareId));
         if (documentDto == null) {
             throw new NotFoundException();
         }
@@ -723,7 +731,10 @@ public class FileResource extends BaseResource {
     public Response zip(
             @FormParam("files") List<String> filesIdsList) {
         authenticate();
-        List<File> fileList = findFiles(filesIdsList);
+        // 批量下载原始文件，需要 DOWNLOADABLE
+        List<File> fileList = findFiles(filesIdsList, PermType.DOWNLOADABLE);
+        // 记录批量下载事件，否则审计线索缺失
+        AuditLogUtil.createDownloadLog("bulk:" + filesIdsList, "File", principal.getId());
         return sendZippedFiles("files", fileList);
     }
 
@@ -773,13 +784,13 @@ public class FileResource extends BaseResource {
      * @param shareId Share ID
      * @return File
      */
-    private File findFile(String fileId, String shareId) {
+    private File findFile(String fileId, String shareId, PermType requiredPerm) {
         FileDao fileDao = new FileDao();
         File file = fileDao.getFile(fileId);
         if (file == null) {
             throw new NotFoundException();
         }
-        checkFileAccessible(shareId, file);
+        checkFileAccessible(shareId, file, requiredPerm);
         return file;
     }
 
@@ -788,23 +799,27 @@ public class FileResource extends BaseResource {
      * Find a list of files with access rights checking.
      *
      * @param filesIds Files IDs
+     * @param requiredPerm Minimum permission the caller must hold on each file's document.
      * @return List<File>
      */
-    private List<File> findFiles(List<String> filesIds) {
+    private List<File> findFiles(List<String> filesIds, PermType requiredPerm) {
         FileDao fileDao = new FileDao();
         List<File> files = fileDao.getFiles(filesIds);
         for (File file : files) {
-            checkFileAccessible(null, file);
+            checkFileAccessible(null, file, requiredPerm);
         }
         return files;
     }
 
     /**
-     * Check if a file is accessible to the current user
-     * @param shareId Share ID
-     * @param file
+     * Check if a file is accessible to the current user.
+     *
+     * @param shareId Share ID (null for owner-side requests)
+     * @param file File being accessed
+     * @param requiredPerm Minimum permission the caller must hold on the file's document
+     *                     (READ for preview, DOWNLOADABLE for raw download/zip).
      */
-    private void checkFileAccessible(String shareId, File file) {
+    private void checkFileAccessible(String shareId, File file, PermType requiredPerm) {
         if (file.getDocumentId() == null) {
             // It's an orphan file
             if (!file.getUserId().equals(principal.getId())) {
@@ -812,9 +827,9 @@ public class FileResource extends BaseResource {
                 throw new ForbiddenClientException();
             }
         } else {
-            // Check document accessibility
+            // Check document accessibility against the requested permission level.
             AclDao aclDao = new AclDao();
-            if (!aclDao.checkPermission(file.getDocumentId(), PermType.READ, getTargetIdList(shareId))) {
+            if (!aclDao.checkPermission(file.getDocumentId(), requiredPerm, getTargetIdList(shareId))) {
                 throw new ForbiddenClientException();
             }
         }
