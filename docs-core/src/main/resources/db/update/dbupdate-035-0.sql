@@ -1,27 +1,13 @@
--- DBUPDATE-035-0.SQL
---
 -- 借阅审批工作流：用户对只有 SEARCHABLE 权限的文档可发起借阅申请，
 -- 审批通过后授予临时 READ 或 DOWNLOADABLE 权限，到期自动撤销。
 --
 -- 设计：借阅是事务表（独立 T_BORROW_REQUEST），授权仍复用 T_ACL，
 -- 仅在 ACL_TYPE_C 上加 BORROW 标签，便于 BorrowExpiryService 识别和软删。
+--
+-- IMPORTANT: every statement must be a single line. DbOpenHelper splits the file at
+-- .newlines and runs each non-empty, non-comment line as one statement.
 
-create table T_BORROW_REQUEST (
-    BOR_ID_C            varchar(36)  not null,
-    BOR_IDDOC_C         varchar(36)  not null,
-    BOR_IDREQUSER_C     varchar(36)  not null,
-    BOR_IDAPPUSER_C     varchar(36)  not null,
-    BOR_STATUS_C        varchar(20)  not null,
-    BOR_PERM_C          varchar(30)  not null,
-    BOR_DURATIONDAYS_N  int          not null,
-    BOR_NOTE_C          varchar(2000),
-    BOR_CREATEDATE_D    datetime,
-    BOR_DECISIONDATE_D  datetime,
-    BOR_EXPIRYDATE_D    datetime,
-    BOR_ACL_ID_C        varchar(36),
-    BOR_DELETEDATE_D    datetime,
-    primary key (BOR_ID_C)
-);
+create table T_BORROW_REQUEST (BOR_ID_C varchar(36) not null, BOR_IDDOC_C varchar(36) not null, BOR_IDREQUSER_C varchar(36) not null, BOR_IDAPPUSER_C varchar(36) not null, BOR_STATUS_C varchar(20) not null, BOR_PERM_C varchar(30) not null, BOR_DURATIONDAYS_N int not null, BOR_NOTE_C varchar(2000), BOR_CREATEDATE_D datetime, BOR_DECISIONDATE_D datetime, BOR_EXPIRYDATE_D datetime, BOR_ACL_ID_C varchar(36), BOR_DELETEDATE_D datetime, primary key (BOR_ID_C));
 
 create index IDX_BOR_IDDOC_C      on T_BORROW_REQUEST (BOR_IDDOC_C);
 create index IDX_BOR_IDAPPUSER_C  on T_BORROW_REQUEST (BOR_IDAPPUSER_C, BOR_STATUS_C);
