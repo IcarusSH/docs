@@ -6,6 +6,7 @@ import com.sismics.docs.core.constant.ConfigType;
 import com.sismics.docs.core.constant.Constants;
 import com.sismics.docs.core.constant.PermType;
 import com.sismics.docs.core.dao.AclDao;
+import com.sismics.docs.core.dao.BorrowRequestDao;
 import com.sismics.docs.core.dao.ContributorDao;
 import com.sismics.docs.core.dao.DocumentDao;
 import com.sismics.docs.core.dao.FileDao;
@@ -183,14 +184,22 @@ public class DocumentResource extends BaseResource {
 
         DocumentDao documentDao = new DocumentDao();
         DocumentDto documentDto = documentDao.getDocument(documentId, PermType.READ, getTargetIdList(shareId));
-        if (documentDto == null) {
-            throw new NotFoundException();
+        boolean readable = documentDto != null;
+        if (!readable) {
+            // The user might still have SEARCHABLE access. Fall back so the frontend can
+            // render the document header + a "request borrow" entry point instead of a 404.
+            // If even SEARCHABLE is denied, the document is truly invisible and we 404.
+            documentDto = documentDao.getDocument(documentId, PermType.SEARCHABLE, getTargetIdList(shareId));
+            if (documentDto == null) {
+                throw new NotFoundException();
+            }
         }
 
         // Log the view event so it shows up in the document's Activity tab.
         // We skip the log when the request is from a public share link so anonymous
-        // share consumers don't pollute the audit log.
-        if (shareId == null) {
+        // share consumers don't pollute the audit log, and when the caller only has
+        // SEARCHABLE access since nothing was actually viewed yet.
+        if (shareId == null && readable) {
             AuditLogUtil.createViewLog(documentId, principal.getId());
         }
 
@@ -230,10 +239,26 @@ public class DocumentResource extends BaseResource {
         if (!principal.isAnonymous()) {
             AclDao aclDao = new AclDao();
             document
-                    .add("searchable", aclDao.checkPermission(documentId, PermType.SEARCHABLE, getTargetIdList(shareId)))
-                    .add("readable", aclDao.checkPermission(documentId, PermType.READ, getTargetIdList(shareId)))
+                    .add("searchable", true)  // we already passed the SEARCHABLE gate above
+                    .add("readable", readable)
                     .add("downloadable", aclDao.checkPermission(documentId, PermType.DOWNLOADABLE, getTargetIdList(shareId)))
                     .add("writable", aclDao.checkPermission(documentId, PermType.WRITE, getTargetIdList(shareId)));
+
+            // If the user can read, surface the latest expiry among active BORROW ACLs so the
+            // detail page can show "永久" or a concrete date. The user holds permanent access
+            // (admin, group grant, owner) if any non-BORROW ACL implies READ; in that case we
+            // emit 0 to mean "永久" and let the frontend decide what to render.
+            if (readable) {
+                long borrowExpiry = 0L;
+                if (!aclDao.hasPermanentPermission(documentId, PermType.READ, getTargetIdList(shareId))) {
+                    java.util.Date latest = new BorrowRequestDao()
+                            .findLatestActiveExpiry(documentId, principal.getId());
+                    if (latest != null) {
+                        borrowExpiry = latest.getTime();
+                    }
+                }
+                document.add("borrow_expiry_date", borrowExpiry);
+            }
         }
 
         // Add computed ACL

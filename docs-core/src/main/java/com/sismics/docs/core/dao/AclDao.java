@@ -160,6 +160,52 @@ public class AclDao {
     }
 
     /**
+     * True if the target has a permanent (non-BORROW) ACL granting at least {@code perm}.
+     * Used by the document detail page to decide whether to show "永久" or the borrow expiry
+     * — a user with both permanent and borrow access should see "永久".
+     *
+     * @param sourceId     document/tag id
+     * @param perm         minimum required permission
+     * @param targetIdList principal + groups
+     * @return true when at least one non-BORROW ACL implies {@code perm}
+     */
+    public boolean hasPermanentPermission(String sourceId, PermType perm, List<String> targetIdList) {
+        if (SecurityUtil.skipAclCheck(targetIdList)) {
+            return true;
+        }
+        if (targetIdList.isEmpty()) {
+            return false;
+        }
+
+        StringBuilder permNames = new StringBuilder();
+        for (PermType p : PermType.values()) {
+            if (p.implies(perm)) {
+                if (permNames.length() > 0) permNames.append(',');
+                permNames.append('\'').append(p.name()).append('\'');
+            }
+        }
+
+        EntityManager em = ThreadLocalContext.get().getEntityManager();
+        StringBuilder sb = new StringBuilder("select a.ACL_ID_C from T_ACL a ");
+        sb.append(" where a.ACL_TARGETID_C in (:targetIdList) and a.ACL_SOURCEID_C = :sourceId ");
+        sb.append(" and a.ACL_PERM_C in (").append(permNames).append(") ");
+        sb.append(" and a.ACL_TYPE_C <> 'BORROW' ");
+        sb.append(" and a.ACL_DELETEDATE_D is null ");
+        sb.append(" union all ");
+        sb.append(" select a.ACL_ID_C from T_ACL a, T_DOCUMENT_TAG dt, T_DOCUMENT d ");
+        sb.append(" where a.ACL_SOURCEID_C = dt.DOT_IDTAG_C and dt.DOT_IDDOCUMENT_C = d.DOC_ID_C and dt.DOT_DELETEDATE_D is null ");
+        sb.append(" and d.DOC_ID_C = :sourceId and d.DOC_DELETEDATE_D is null ");
+        sb.append(" and a.ACL_TARGETID_C in (:targetIdList) and a.ACL_PERM_C in (").append(permNames).append(") ");
+        sb.append(" and a.ACL_TYPE_C <> 'BORROW' ");
+        sb.append(" and a.ACL_DELETEDATE_D is null ");
+        Query q = em.createNativeQuery(sb.toString());
+        q.setParameter("sourceId", sourceId);
+        q.setParameter("targetIdList", targetIdList);
+
+        return q.getResultList().size() > 0;
+    }
+
+    /**
      * Delete an ACL.
      *
      * @param sourceId Source ID

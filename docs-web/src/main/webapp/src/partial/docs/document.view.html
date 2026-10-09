@@ -53,6 +53,17 @@
       {{ 'document.view.by_creator' | translate }} <a href="#/user/{{ document.creator }}">{{ document.creator }}</a></small>
     </h1>
 
+    <p ng-show="document.readable" style="margin-top: -8px;">
+      <span class="label label-success" ng-show="!document.borrow_expiry_date || document.borrow_expiry_date === 0">
+        <span class="fas fa-infinity"></span>
+        {{ 'document.borrow.access_permanent' | translate }}
+      </span>
+      <span class="label label-info" ng-show="document.borrow_expiry_date > 0">
+        <span class="fas fa-clock"></span>
+        {{ 'document.borrow.access_until' | translate }} {{ document.borrow_expiry_date | date: dateFormat }}
+      </span>
+    </p>
+
 	  <p ng-show="document.writable">
 	    <button class="btn btn-sm btn-info" ng-click="share()" ng-show="userInfo.username != 'guest'">
         <span class="fas fa-share"></span> {{ 'share' | translate }}
@@ -72,7 +83,20 @@
 	  </ul>
 	</div>
 
-  <div class="row">
+  <div ng-show="canRequestBorrow()" class="row">
+    <div class="col-md-12">
+      <div class="alert alert-warning text-center" style="margin-top: 20px;">
+        <h4><span class="fas fa-lock"></span> {{ 'document.borrow.no_access_title' | translate }}</h4>
+        <p>{{ 'document.borrow.no_access_message' | translate }}</p>
+        <button class="btn btn-warning btn-lg" ng-click="requestBorrow()">
+          <span class="fas fa-hand-holding"></span>
+          {{ 'document.borrow.request_button' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="row" ng-show="document.readable">
     <div class="col-md-9">
       <ul class="nav nav-tabs">
         <li ng-class="{ active: $state.current.name == 'document.view.content' }">
