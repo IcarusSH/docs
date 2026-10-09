@@ -338,6 +338,15 @@ angular.module('docs',
         }
       }
     })
+    .state('file_content', {
+      url: '/file-content/:fileId',
+      views: {
+        'page': {
+          templateUrl: 'partial/docs/file.content.html',
+          controller: 'FileContent'
+        }
+      }
+    })
     .state('borrow_center', {
       url: '/borrows',
       views: {

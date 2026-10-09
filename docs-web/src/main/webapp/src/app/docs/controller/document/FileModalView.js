@@ -42,7 +42,7 @@ angular.module('docs').controller('FileModalView', function ($rootScope, $uibMod
         line.style.transformOrigin = '0 0';
         line.style.whiteSpace = 'nowrap';
         line.style.color = '#000';
-        line.style.opacity = '0.32';
+        line.style.opacity = '0.18';
         line.style.fontSize = '22px';
         line.style.fontWeight = '600';
         line.style.fontFamily = 'Helvetica, Arial, sans-serif';
@@ -138,7 +138,9 @@ angular.module('docs').controller('FileModalView', function ($rootScope, $uibMod
    * Open the file content a new window.
    */
   $scope.openFileContent = function () {
-    window.open('../api/file/' + $stateParams.fileId + '/data?size=content');
+    // 跳到带水印的 OCR 文本预览页（state: file_content），
+    // 而不是直接打开 /api/file/.../data?size=content（那是裸 text/plain 页面，没水印）
+    window.open('#/file-content/' + $stateParams.fileId, '_blank');
   };
 
   /**

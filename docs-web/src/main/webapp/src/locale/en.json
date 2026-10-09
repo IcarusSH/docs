@@ -263,6 +263,12 @@
       "next": "Next",
       "not_found": "File not found"
     },
+    "content": {
+      "title": "OCR text preview",
+      "watermark_hint": "watermarked — screenshots are traceable",
+      "load_error": "Failed to load text content (HTTP error)",
+      "forbidden": "You don't have access to this document's text content"
+    },
     "edit": {
       "title": "Edit file",
       "name": "Filename"

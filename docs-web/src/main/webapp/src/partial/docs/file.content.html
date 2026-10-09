@@ -1,0 +1,28 @@
+<div class="text-content-page" style="position: relative; min-height: 100vh;">
+  <h3 class="page-header" style="margin: 16px 24px;">
+    <span class="fas fa-file-text-o"></span> {{ 'file.content.title' | translate }}
+    <small class="text-muted" style="margin-left: 8px;">{{ 'file.content.watermark_hint' | translate }}</small>
+  </h3>
+
+  <div ng-show="loading" class="text-center" style="padding: 40px;">
+    <span class="fas fa-spinner fa-spin"></span> {{ 'loading' | translate }}...
+  </div>
+
+  <div ng-show="error === 'forbidden'" class="alert alert-danger text-center" style="margin: 20px;">
+    {{ 'error.forbidden' | translate }}
+  </div>
+
+  <div ng-show="error === 'load_error' || (error && error !== 'forbidden')" class="alert alert-warning text-center" style="margin: 20px;">
+    {{ 'file.content.load_error' | translate }}
+  </div>
+
+  <div ng-show="!loading && !error" class="text-content" style="position: relative; padding: 24px; min-height: calc(100vh - 120px);">
+    <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.6; margin: 0;">{{ text }}</pre>
+
+    <!-- Watermark overlay: 600 个水印 div 由 FileContent 控制器注入。
+         真实 DOM 元素保证 z-index 永远在 <pre> 之上，不受 background-image 渲染问题影响。 -->
+    <div class="watermark-overlay"
+         style="position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 10;">
+    </div>
+  </div>
+</div>
