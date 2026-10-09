@@ -1,0 +1,83 @@
+<div class="text-center" ng-show="!borrow && !error">
+  <span class="fas fa-circle-notch fa-spin"></span>
+</div>
+
+<div ng-show="error" class="well-lg">
+  <p class="text-center" ng-show="error.status == 403 || error.status == 404">
+    <span class="fas fa-exclamation-triangle"></span>
+    {{ 'document.borrow.not_accessible' | translate }}
+  </p>
+</div>
+
+<div ng-show="borrow">
+  <div class="page-header">
+    <h1>
+      <span class="fas fa-hand-holding"></span>
+      {{ 'document.borrow.detail_title' | translate }}
+    </h1>
+  </div>
+
+  <table class="table table-striped">
+    <tbody>
+      <tr>
+        <th style="width: 160px;">{{ 'document.borrow.field_document' | translate }}</th>
+        <td>
+          <a href="#/document/view/{{ borrow.document_id }}">{{ borrow.document_title || ('document.borrow.no_title' | translate) }}</a>
+        </td>
+      </tr>
+      <tr>
+        <th>{{ 'document.borrow.field_requester' | translate }}</th>
+        <td>{{ borrow.requester_username || borrow.requester_id }}</td>
+      </tr>
+      <tr>
+        <th>{{ 'document.borrow.field_approver' | translate }}</th>
+        <td>{{ borrow.approver_username || borrow.approver_id }}</td>
+      </tr>
+      <tr>
+        <th>{{ 'document.borrow.field_perm' | translate }}</th>
+        <td>
+          <span class="label label-info" ng-show="borrow.perm === 'READ'">{{ 'document.borrow.perm_READ' | translate }}</span>
+          <span class="label label-warning" ng-show="borrow.perm === 'DOWNLOADABLE'">{{ 'document.borrow.perm_DOWNLOADABLE' | translate }}</span>
+        </td>
+      </tr>
+      <tr>
+        <th>{{ 'document.borrow.field_duration' | translate }}</th>
+        <td>{{ borrow.duration_days }} {{ 'document.borrow.days' | translate }}</td>
+      </tr>
+      <tr ng-show="borrow.create_date">
+        <th>{{ 'document.borrow.field_created' | translate }}</th>
+        <td>{{ borrow.create_date | date: dateFormat }}</td>
+      </tr>
+      <tr ng-show="borrow.status === 'APPROVED' && borrow.expiry_date">
+        <th>{{ 'document.borrow.field_expires' | translate }}</th>
+        <td>{{ borrow.expiry_date | date: dateFormat }}</td>
+      </tr>
+      <tr>
+        <th>{{ 'document.borrow.field_status' | translate }}</th>
+        <td>
+          <span class="label label-default" ng-show="borrow.status === 'PENDING'">{{ 'document.borrow.status_PENDING' | translate }}</span>
+          <span class="label label-success" ng-show="borrow.status === 'APPROVED'">{{ 'document.borrow.status_APPROVED' | translate }}</span>
+          <span class="label label-danger" ng-show="borrow.status === 'REJECTED'">{{ 'document.borrow.status_REJECTED' | translate }}</span>
+          <span class="label label-warning" ng-show="borrow.status === 'EXPIRED'">{{ 'document.borrow.status_EXPIRED' | translate }}</span>
+          <span class="label label-default" ng-show="borrow.status === 'CANCELLED'">{{ 'document.borrow.status_CANCELLED' | translate }}</span>
+        </td>
+      </tr>
+      <tr ng-show="borrow.note">
+        <th>{{ 'document.borrow.field_note' | translate }}</th>
+        <td><pre style="white-space: pre-wrap; font-family: inherit; background: transparent; border: 0; padding: 0; margin: 0;">{{ borrow.note }}</pre></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div ng-show="canDecide()" class="well">
+    <button class="btn btn-success" ng-click="approve()" ng-disabled="busy">
+      <span class="fas fa-check"></span>
+      {{ 'document.borrow.approve' | translate }}
+    </button>
+    <button class="btn btn-danger" ng-click="reject()" ng-disabled="busy" style="margin-left: 8px;">
+      <span class="fas fa-times"></span>
+      {{ 'document.borrow.reject' | translate }}
+    </button>
+    <p class="text-muted" style="margin-top: 8px;">{{ 'document.borrow.approve_hint' | translate }}</p>
+  </div>
+</div>
