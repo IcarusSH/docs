@@ -138,9 +138,10 @@ angular.module('docs').controller('FileModalView', function ($rootScope, $uibMod
    * Open the file content a new window.
    */
   $scope.openFileContent = function () {
-    // 跳到带水印的 OCR 文本预览页（state: file_content），
-    // 而不是直接打开 /api/file/.../data?size=content（那是裸 text/plain 页面，没水印）
-    window.open('#/file-content/' + $stateParams.fileId, '_blank');
+    // 直接打开后端 /api/file/.../data?size=content。
+    // 后端检测 Accept 头：浏览器（text/html）会自动返回带水印的 HTML 页面；
+    // API 调用方仍可拿到裸 text/plain（保持兼容）。
+    window.open('../api/file/' + $stateParams.fileId + '/data?size=content', '_blank');
   };
 
   /**

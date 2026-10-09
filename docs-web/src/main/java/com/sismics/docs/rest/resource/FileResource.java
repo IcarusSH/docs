@@ -565,11 +565,12 @@ public class FileResource extends BaseResource {
      */
     @GET
     @Path("{id: [a-z0-9\\-]+}/data")
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_HTML, "text/plain"})
     public Response data(
             @PathParam("id") final String fileId,
             @QueryParam("share") String shareId,
-            @QueryParam("size") String size) {
+            @QueryParam("size") String size,
+            @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader) {
         authenticate();
 
         if (size != null && !Lists.newArrayList("web", "thumb", "content").contains(size)) {
@@ -599,7 +600,26 @@ public class FileResource extends BaseResource {
         boolean decrypt;
         if (size != null) {
             if (size.equals("content")) {
-                return Response.ok(Strings.nullToEmpty(file.getContent()))
+                String text = Strings.nullToEmpty(file.getContent());
+                // 浏览器（Accept: text/html）请求时返回带水印的 HTML 包装页面，
+                // 避免用户直接复制粘贴 URL 拿到裸 text/plain 后可随便外传。
+                // API 客户端（curl / Restangular）默认 Accept 不含 text/html，
+                // 仍会拿到裸 text/plain，行为不变。
+                if (acceptHeader != null && acceptHeader.contains("text/html")) {
+                    String docTitle = file.getDocumentId();
+                    DocumentDao documentDao = new DocumentDao();
+                    com.sismics.docs.core.model.jpa.Document doc = documentDao.getById(file.getDocumentId());
+                    if (doc != null) {
+                        docTitle = doc.getTitle();
+                    }
+                    String username = principal.getName();
+                    long nowMs = System.currentTimeMillis();
+                    String html = buildWatermarkedTextPage(text, username, docTitle, file.getName(), nowMs);
+                    return Response.ok(html)
+                            .header(HttpHeaders.CONTENT_TYPE, "text/html; charset=utf-8")
+                            .build();
+                }
+                return Response.ok(text)
                         .header(HttpHeaders.CONTENT_TYPE, "text/plain; charset=utf-8")
                         .build();
             }
@@ -833,5 +853,102 @@ public class FileResource extends BaseResource {
                 throw new ForbiddenClientException();
             }
         }
+    }
+
+    /**
+     * Build a self-contained HTML page that displays OCR text content with a tiled
+     * watermark of "username · timestamp" across the whole viewport. The page is
+     * designed to be saved/printed/screenshot-proof: any captured image still carries
+     * the viewing user identity and the time of access.
+     *
+     * @param text       OCR text content (already HTML-escaped before interpolation)
+     * @param username   viewing user (server-side, from principal)
+     * @param docTitle   parent document title (HTML-escaped)
+     * @param fileName   source filename (HTML-escaped)
+     * @param timestampMs epoch millis when the page was generated
+     * @return complete HTML document as a String
+     */
+    private String buildWatermarkedTextPage(String text, String username, String docTitle,
+                                            String fileName, long timestampMs) {
+        String safeUsername = htmlEscape(username);
+        String safeDocTitle = htmlEscape(docTitle);
+        String safeFileName = htmlEscape(fileName);
+        String safeText = htmlEscape(text);
+        // Format timestamp as yyyy-MM-dd HH:mm:ss in server local timezone
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        sdf.setTimeZone(java.util.TimeZone.getDefault());
+        String formattedTime = sdf.format(new java.util.Date(timestampMs));
+        String watermarkText = safeUsername + " · " + formattedTime;
+
+        // 600 个 div（20 列 × 30 行）网格铺满，与前端 file_content state 同样的视觉效果。
+        // 用服务端渲染，访问者即便禁用 JS 也能看到水印。
+        StringBuilder lines = new StringBuilder();
+        for (int row = 0; row < 30; row++) {
+            for (int col = 0; col < 20; col++) {
+                int left = col * 280;
+                int top = row * 120 - 200;
+                lines.append("<div class=\"wm-line\" style=\"left:")
+                     .append(left).append("px;top:").append(top).append("px;\">")
+                     .append(watermarkText)
+                     .append("</div>");
+            }
+        }
+
+        return "<!DOCTYPE html>\n" +
+            "<html lang=\"zh-CN\">\n" +
+            "<head>\n" +
+            "  <meta charset=\"utf-8\">\n" +
+            "  <title>" + safeFileName + " - OCR 文本</title>\n" +
+            "  <style>\n" +
+            "    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; }\n" +
+            "    header { padding: 12px 24px; background: #f5f5f5; border-bottom: 1px solid #ddd; }\n" +
+            "    header h1 { margin: 0; font-size: 18px; color: #333; }\n" +
+            "    header .meta { color: #888; font-size: 12px; margin-top: 4px; }\n" +
+            "    .text-content { position: relative; padding: 24px; min-height: calc(100vh - 80px); }\n" +
+            "    pre.content { white-space: pre-wrap; word-wrap: break-word;\n" +
+            "                  font-family: 'Courier New', monospace; font-size: 14px;\n" +
+            "                  line-height: 1.6; margin: 0; }\n" +
+            "    .watermark-overlay { position: absolute; inset: 0; overflow: hidden;\n" +
+            "                          pointer-events: none; z-index: 10; }\n" +
+            "    .wm-line { position: absolute; transform: rotate(-30deg); transform-origin: 0 0;\n" +
+            "               white-space: nowrap; color: #000; opacity: 0.18;\n" +
+            "               font-size: 22px; font-weight: 600;\n" +
+            "               font-family: Helvetica, Arial, sans-serif; }\n" +
+            "  </style>\n" +
+            "</head>\n" +
+            "<body>\n" +
+            "  <header>\n" +
+            "    <h1>OCR 文本预览（带水印 — 截图可追溯）</h1>\n" +
+            "    <div class=\"meta\">文档: " + safeDocTitle + " · 文件: " + safeFileName + " · 访问者: " + safeUsername + " · 时间: " + formattedTime + "</div>\n" +
+            "  </header>\n" +
+            "  <div class=\"text-content\">\n" +
+            "    <pre class=\"content\">" + safeText + "</pre>\n" +
+            "    <div class=\"watermark-overlay\">" + lines.toString() + "</div>\n" +
+            "  </div>\n" +
+            "</body>\n" +
+            "</html>";
+    }
+
+    /**
+     * Minimal HTML entity escape for safe interpolation into the watermarked page.
+     * We don't need full HTML sanitization here because the text is the user's own
+     * OCR text (already author-controlled at upload time) and the metadata fields
+     * come from the DB. Better-safe-than-sorry.
+     */
+    private String htmlEscape(String s) {
+        if (s == null) return "";
+        StringBuilder out = new StringBuilder(s.length() + 16);
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '&':  out.append("&amp;");  break;
+                case '<':  out.append("&lt;");   break;
+                case '>':  out.append("&gt;");   break;
+                case '"':  out.append("&quot;"); break;
+                case '\'': out.append("&#39;");  break;
+                default:   out.append(c);
+            }
+        }
+        return out.toString();
     }
 }
