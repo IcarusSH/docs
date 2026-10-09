@@ -106,6 +106,55 @@ public class BorrowRequestDao {
     }
 
     /**
+     * Latest future expiry among active APPROVED borrows this requester holds on this document.
+     * Returns null when the user has no active borrow — i.e. they have permanent (non-borrow)
+     * access or no access at all. Drives the document detail page's "last access time" hint.
+     *
+     * @param documentId  target document
+     * @param requesterId user being granted temporary access
+     * @return latest expiry, or null if no active borrow exists
+     */
+    public Date findLatestActiveExpiry(String documentId, String requesterId) {
+        EntityManager em = ThreadLocalContext.get().getEntityManager();
+        Query q = em.createQuery(
+                "select max(b.expiryDate) from BorrowRequest b " +
+                "where b.documentId = :docId and b.requesterId = :reqId " +
+                "and b.status = :approved and b.deleteDate is null " +
+                "and b.expiryDate is not null and b.expiryDate > :now");
+        q.setParameter("docId", documentId);
+        q.setParameter("reqId", requesterId);
+        q.setParameter("approved", BorrowStatus.APPROVED);
+        q.setParameter("now", new Date());
+        try {
+            return (Date) q.getSingleResult();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Admin-only: list every borrow request, optionally filtered by status. Drives the borrow
+     * center page. Order is most recent first.
+     *
+     * @param statusFilter null = all statuses; otherwise filter to one status
+     * @return list of borrow requests, newest first
+     */
+    @SuppressWarnings("unchecked")
+    public List<BorrowRequest> findAll(BorrowStatus statusFilter) {
+        EntityManager em = ThreadLocalContext.get().getEntityManager();
+        StringBuilder jpql = new StringBuilder("select b from BorrowRequest b where b.deleteDate is null");
+        if (statusFilter != null) {
+            jpql.append(" and b.status = :status");
+        }
+        jpql.append(" order by b.createDate desc");
+        Query q = em.createQuery(jpql.toString());
+        if (statusFilter != null) {
+            q.setParameter("status", statusFilter);
+        }
+        return q.getResultList();
+    }
+
+    /**
      * True if the requester already has a still-active (PENDING or APPROVED-not-yet-expired)
      * borrow request for this document. Used to reject duplicate submissions.
      */

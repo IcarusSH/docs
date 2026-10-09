@@ -64,13 +64,6 @@ angular.module('docs').controller('Navigation', function($scope, $state, $stateP
     if (pollHandle) { $interval.cancel(pollHandle); }
   });
 
-  $scope.approveBorrow = function(req) {
-    Restangular.one('borrow/' + req.id + '/approve').post('').then(refreshPendingBorrows);
-  };
-  $scope.rejectBorrow = function(req) {
-    Restangular.one('borrow/' + req.id + '/reject').post('').then(refreshPendingBorrows);
-  };
-
   /**
    * User logout.
    */

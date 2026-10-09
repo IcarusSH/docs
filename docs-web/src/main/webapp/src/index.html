@@ -71,6 +71,8 @@
     <script src="app/docs/controller/document/DocumentModalShare.js" type="text/javascript"></script>
     <script src="app/docs/controller/document/DocumentModalPdf.js" type="text/javascript"></script>
     <script src="app/docs/controller/document/DocumentModalBorrow.js" type="text/javascript"></script>
+    <script src="app/docs/controller/document/BorrowDetail.js" type="text/javascript"></script>
+    <script src="app/docs/controller/document/BorrowCenter.js" type="text/javascript"></script>
     <script src="app/docs/controller/document/DocumentModalAddTag.js" type="text/javascript"></script>
     <script src="app/docs/controller/document/FileView.js?v=2" type="text/javascript"></script>
     <script src="app/docs/controller/document/FileModalView.js?v=2" type="text/javascript"></script>
@@ -160,6 +162,9 @@
           <li ui-sref-active="{ active: 'user.**', active2: 'group.**' }">
             <a href="#/user"><span class="fas fa-user"></span> {{ 'index.nav_users_groups' | translate }}</a>
           </li>
+          <li ui-sref-active="{ active: 'borrow_center' }" ng-show="userInfo && userInfo.base_functions && userInfo.base_functions.indexOf('ADMIN') >= 0">
+            <a href="#/borrows"><span class="fas fa-hand-holding"></span> {{ 'document.borrow.nav_center' | translate }}</a>
+          </li>
         </ul>
 
         <ul class="nav navbar-nav navbar-right" ng-show="!userInfo.anonymous">
@@ -172,16 +177,17 @@
               <li class="dropdown-header">{{ 'document.borrow.pending_header' | translate }}</li>
               <li ng-repeat="req in pendingBorrows" style="padding: 8px 16px; min-width: 280px;">
                 <div>
-                  <strong>{{ req.requester_id }}</strong>
+                  <strong>{{ req.requester_username || req.requester_id }}</strong>
                   {{ 'document.borrow.notif_text' | translate: req }}
                 </div>
+                <div class="text-muted" style="font-size: 12px; margin-top: 2px;">
+                  <span class="fas fa-file"></span> {{ req.document_title || ('document.borrow.no_title' | translate) }}
+                </div>
                 <div style="margin-top: 6px;">
-                  <button class="btn btn-xs btn-success" ng-click="approveBorrow(req)">
-                    {{ 'document.borrow.approve' | translate }}
-                  </button>
-                  <button class="btn btn-xs btn-danger" ng-click="rejectBorrow(req)">
-                    {{ 'document.borrow.reject' | translate }}
-                  </button>
+                  <a class="btn btn-xs btn-primary" href="#/borrow/{{ req.id }}">
+                    <span class="fas fa-search"></span>
+                    {{ 'document.borrow.view_detail' | translate }}
+                  </a>
                 </div>
               </li>
               <li ng-show="!pendingBorrows || pendingBorrows.length === 0" class="text-muted" style="padding: 8px 16px;">
@@ -253,7 +259,7 @@
               <li><a href ng-click="changeLanguage('sq_AL')" ng-class="{ 'bg-info': currentLang == 'sq_AL' }">Shqip</a></li>
             </ul>
           </li>
-          <li translate="document.default.footer_sismics"></li>
+          <!-- <li translate="document.default.footer_sismics"></li> -->
           <li><a href="../apidoc/">{{ 'document.default.api_documentation' | translate }}</a></li>
           <li>v{{ app.current_version }}</li>
         </ul>

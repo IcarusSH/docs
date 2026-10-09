@@ -8,8 +8,9 @@ package com.sismics.docs.core.constant;
  *   PENDING    → REJECTED  (approver refuses it)
  *   PENDING    → CANCELLED (requester withdraws it)
  *   APPROVED   → EXPIRED   (BorrowExpiryService sweeps past BOR_EXPIRYDATE_D)
+ *   APPROVED   → REVOKED   (admin manually revokes a live grant)
  *
- * Terminal states: REJECTED, CANCELLED, EXPIRED.
+ * Terminal states: REJECTED, CANCELLED, EXPIRED, REVOKED.
  *
  * @author Claude
  */
@@ -37,5 +38,12 @@ public enum BorrowStatus {
     /**
      * Requester withdrew the request before it was decided.
      */
-    CANCELLED
+    CANCELLED,
+
+    /**
+     * Admin manually revoked a previously APPROVED grant. The BORROW ACL is soft-deleted
+     * and the requester loses access immediately. Distinct from CANCELLED (requester-side
+     * action) and EXPIRED (system-side timed action).
+     */
+    REVOKED
 }

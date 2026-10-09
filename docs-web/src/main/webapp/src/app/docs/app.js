@@ -329,6 +329,24 @@ angular.module('docs',
         }
       }
     })
+    .state('borrow_detail', {
+      url: '/borrow/:id',
+      views: {
+        'page': {
+          templateUrl: 'partial/docs/borrow.detail.html',
+          controller: 'BorrowDetail'
+        }
+      }
+    })
+    .state('borrow_center', {
+      url: '/borrows',
+      views: {
+        'page': {
+          templateUrl: 'partial/docs/borrow.center.html',
+          controller: 'BorrowCenter'
+        }
+      }
+    })
     .state('document.view.content', {
       url: '/content',
       views: {

@@ -6,11 +6,14 @@ import com.sismics.docs.core.constant.BorrowStatus;
 import com.sismics.docs.core.constant.PermType;
 import com.sismics.docs.core.dao.AclDao;
 import com.sismics.docs.core.dao.BorrowRequestDao;
+import com.sismics.docs.core.dao.DocumentDao;
 import com.sismics.docs.core.dao.UserDao;
 import com.sismics.docs.core.model.jpa.Acl;
 import com.sismics.docs.core.model.jpa.BorrowRequest;
+import com.sismics.docs.core.model.jpa.Document;
 import com.sismics.docs.core.model.jpa.User;
 import com.sismics.docs.core.util.AuditLogUtil;
+import com.sismics.docs.rest.constant.BaseFunction;
 import com.sismics.rest.exception.ClientException;
 import com.sismics.rest.exception.ForbiddenClientException;
 import com.sismics.rest.util.ValidationUtil;
@@ -26,6 +29,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -323,6 +327,81 @@ public class BorrowResource extends BaseResource {
     }
 
     /**
+     * Admin borrow center: list every borrow request (optionally filtered by status).
+     * Only ADMIN users may call this.
+     *
+     * @api {get} /borrow/admin/list List every borrow request
+     * @apiName GetBorrowAdminList
+     * @apiGroup Borrow
+     * @apiParam {String="PENDING","APPROVED","REJECTED","EXPIRED","CANCELLED","REVOKED"} [status] Filter
+     */
+    @GET
+    @Path("admin/list")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response adminList(@QueryParam("status") String statusStr) {
+        if (!authenticate()) {
+            throw new ForbiddenClientException();
+        }
+        checkBaseFunction(BaseFunction.ADMIN);
+
+        BorrowStatus filter = null;
+        if (statusStr != null && !statusStr.isEmpty()) {
+            try {
+                filter = BorrowStatus.valueOf(statusStr);
+            } catch (IllegalArgumentException e) {
+                throw new ClientException("ValidationError", "Unknown status: " + statusStr);
+            }
+        }
+        List<BorrowRequest> list = new BorrowRequestDao().findAll(filter);
+        return Response.ok().entity(toJsonArray(list).build()).build();
+    }
+
+    /**
+     * Admin-only: revoke an APPROVED borrow. Soft-deletes the BORROW ACL immediately and
+     * marks the request REVOKED. Differs from /cancel (requester-side, PENDING only) and
+     * /expire (system-side, time-based).
+     *
+     * @api {post} /borrow/{id}/revoke Admin-revoke an APPROVED borrow
+     * @apiName PostBorrowRevoke
+     * @apiGroup Borrow
+     */
+    @POST
+    @Path("{id: [a-z0-9\\-]+}/revoke")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response revoke(@PathParam("id") String id) {
+        if (!authenticate()) {
+            throw new ForbiddenClientException();
+        }
+        checkBaseFunction(BaseFunction.ADMIN);
+
+        BorrowRequestDao borrowDao = new BorrowRequestDao();
+        AclDao aclDao = new AclDao();
+
+        BorrowRequest req = borrowDao.getById(id);
+        if (req == null || req.getDeleteDate() != null) {
+            throw new ForbiddenClientException();
+        }
+        if (req.getStatus() != BorrowStatus.APPROVED) {
+            throw new ClientException("ValidationError",
+                    "Only APPROVED borrows can be revoked (current status: " + req.getStatus() + ")");
+        }
+
+        // Soft-delete the BORROW ACL so the requester loses access immediately. The delete
+        // method itself emits an AuditLogType.DELETE entry; we additionally emit a
+        // BORROW_REVOKED entry on the request itself for clearer admin-facing reporting.
+        aclDao.delete(req.getDocumentId(), req.getPerm(), req.getRequesterId(),
+                principal.getId(), AclType.BORROW);
+
+        req.setStatus(BorrowStatus.REVOKED);
+        req.setDecisionDate(new Date());
+        borrowDao.update(req);
+
+        AuditLogUtil.create(req, AuditLogType.BORROW_REVOKED, principal.getId());
+
+        return Response.ok().entity(Json.createObjectBuilder().add("status", "ok").build()).build();
+    }
+
+    /**
      * Convert a list of borrow requests to a JSON array with embedded document title and requester name.
      */
     private JsonArrayBuilder toJsonArray(List<BorrowRequest> list) {
@@ -334,11 +413,20 @@ public class BorrowResource extends BaseResource {
     }
 
     private JsonObjectBuilder toJson(BorrowRequest r) {
+        // Embed requester/approver usernames and document title so the notification dropdown
+        // and detail page can show human-readable context without further round-trips.
+        String requesterUsername = lookupUsername(r.getRequesterId());
+        String approverUsername = lookupUsername(r.getApproverId());
+        String documentTitle = lookupDocumentTitle(r.getDocumentId());
+
         JsonObjectBuilder b = Json.createObjectBuilder()
                 .add("id", r.getId())
                 .add("document_id", r.getDocumentId())
+                .add("document_title", documentTitle == null ? "" : documentTitle)
                 .add("requester_id", r.getRequesterId())
+                .add("requester_username", requesterUsername == null ? "" : requesterUsername)
                 .add("approver_id", r.getApproverId())
+                .add("approver_username", approverUsername == null ? "" : approverUsername)
                 .add("status", r.getStatus().name())
                 .add("perm", r.getPerm().name())
                 .add("duration_days", r.getDurationDays())
@@ -348,5 +436,31 @@ public class BorrowResource extends BaseResource {
             b.add("note", r.getNote());
         }
         return b;
+    }
+
+    /**
+     * Best-effort username lookup; returns null if the user has been deleted. We don't surface
+     * the failure to the caller — a deleted user should not break the borrow workflow UI.
+     */
+    private String lookupUsername(String userId) {
+        if (userId == null) return null;
+        User u = new UserDao().getById(userId);
+        return u == null ? null : u.getUsername();
+    }
+
+    /**
+     * Fetch the document title without permission checks. Both the requester and the approver
+     * are entitled to see the title (the requester just submitted the form, the approver
+     * already has WRITE on the doc). We avoid DocumentDao.getDocument() because it enforces
+     * READ and would return null for a requester who only has SEARCHABLE.
+     */
+    private String lookupDocumentTitle(String documentId) {
+        if (documentId == null) return null;
+        try {
+            Document doc = new DocumentDao().getById(documentId);
+            return doc == null ? null : doc.getTitle();
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

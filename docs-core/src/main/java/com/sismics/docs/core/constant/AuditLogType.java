@@ -54,5 +54,11 @@ public enum AuditLogType {
     /**
      * The requester withdrew a pending request before it was decided.
      */
-    BORROW_CANCELLED
+    BORROW_CANCELLED,
+
+    /**
+     * An admin manually revoked a previously APPROVED borrow. The temporary ACL is
+     * soft-deleted immediately, regardless of BOR_EXPIRYDATE_D.
+     */
+    BORROW_REVOKED
 }
