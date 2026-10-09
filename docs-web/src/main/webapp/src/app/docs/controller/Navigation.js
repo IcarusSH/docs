@@ -6,6 +6,33 @@
 angular.module('docs').controller('Navigation', function($scope, $state, $stateParams, $rootScope, $http, $interval, User, Restangular) {
   User.userInfo().then(function(data) {
     $rootScope.userInfo = data;
+    // 兜底：把水印背景图生成到 $rootScope，让文件预览模板的
+    // `watermarkBackground || $root.watermarkBackground` 兜底生效。
+    // 即便 FileModalView.js 被浏览器缓存了旧版本（没有设 $scope.watermarkBackground），
+    // 这里仍然能保证水印 div 拿到一个非空 background-image。
+    if (data && !data.anonymous) {
+      var now = new Date();
+      var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+      var wmTime = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
+                   ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+      var wmText = data.username + ' · ' + wmTime;
+      var escXml = function (s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+      };
+      var w = 400, h = 220;
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">' +
+        '<g transform="rotate(-30 ' + (w/2) + ' ' + (h/2) + ')" ' +
+           'font-family="Helvetica, Arial, sans-serif" font-size="32" font-weight="700">' +
+          '<text x="' + (w/2) + '" y="' + (h/2) + '" text-anchor="middle" dominant-baseline="middle" ' +
+                'fill="#000" fill-opacity="0.7" ' +
+                'stroke="#fff" stroke-opacity="0.9" stroke-width="1.5">' +
+            escXml(wmText) +
+          '</text>' +
+        '</g>' +
+      '</svg>';
+      $rootScope.watermarkBackground = 'url("data:image/svg+xml;base64,' + btoa(svg) + '")';
+    }
     if (data.anonymous) {
       if($state.current.name !== 'login') {
         $state.go('login', {

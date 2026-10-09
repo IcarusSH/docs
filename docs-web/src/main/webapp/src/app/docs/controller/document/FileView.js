@@ -6,7 +6,9 @@
 angular.module('docs').controller('FileView', function($uibModal, $state, $stateParams, $timeout) {
   var modal = $uibModal.open({
     windowClass: 'modal modal-fileview',
-    templateUrl: 'partial/docs/file.view.html',
+    // 加 ?v=2 让 angular $http 重新拉取模板，避免浏览器缓存旧版 file.view.html
+    // （旧模板里水印 div 引用 watermarkBackground，没有 || $root.watermarkBackground 兜底）
+    templateUrl: 'partial/docs/file.view.html?v=2',
     controller: 'FileModalView',
     size: 'lg'
   });
