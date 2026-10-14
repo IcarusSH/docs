@@ -56,11 +56,17 @@
     <org.eclipse.jetty.jetty-webapp.version>11.0.20</org.eclipse.jetty.jetty-webapp.version>
     <org.eclipse.jetty.jetty-servlet.version>11.0.20</org.eclipse.jetty.jetty-servlet.version>
 
+    <!-- docs-mcp module dependencies -->
+    <info.picocli.picocli.version>4.7.6</info.picocli.picocli.version>
+    <com.fasterxml.jackson.core.jackson-databind.version>2.17.2</com.fasterxml.jackson.core.jackson-databind.version>
+    <org.slf4j.slf4j-simple.version>1.7.36</org.slf4j.slf4j-simple.version>
+
     <!-- Plugins version -->
     <org.apache.maven.plugins.maven-antrun-plugin.version>3.1.0</org.apache.maven.plugins.maven-antrun-plugin.version>
     <org.apache.maven.plugins.maven-jar-plugin.version>3.3.0</org.apache.maven.plugins.maven-jar-plugin.version>
     <org.apache.maven.plugins.maven-war-plugin.version>3.3.2</org.apache.maven.plugins.maven-war-plugin.version>
     <org.apache.maven.plugins.maven-surefire-plugin.version>3.0.0</org.apache.maven.plugins.maven-surefire-plugin.version>
+    <org.apache.maven.plugins.maven-shade-plugin.version>3.5.3</org.apache.maven.plugins.maven-shade-plugin.version>
     <org.eclipse.jetty.jetty-maven-plugin.version>11.0.20</org.eclipse.jetty.jetty-maven-plugin.version>
   </properties>
 
@@ -124,6 +130,7 @@
     <module>docs-core</module>
     <module>docs-web-common</module>
     <module>docs-web</module>
+    <module>docs-mcp</module>
   </modules>
 
   <dependencyManagement>
@@ -493,6 +500,43 @@
         <groupId>com.levigo.jbig2</groupId>
         <artifactId>levigo-jbig2-imageio</artifactId>
         <version>${com.levigo.jbig2.levigo-jbig2-imageio.version}</version>
+      </dependency>
+
+      <!-- docs-mcp module: CLI / JSON / logging -->
+      <dependency>
+        <groupId>info.picocli</groupId>
+        <artifactId>picocli</artifactId>
+        <version>${info.picocli.picocli.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${com.fasterxml.jackson.core.jackson-databind.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-core</artifactId>
+        <version>${com.fasterxml.jackson.core.jackson-databind.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>${com.fasterxml.jackson.core.jackson-databind.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>${org.slf4j.slf4j-simple.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>mockwebserver</artifactId>
+        <version>${com.squareup.okhttp3.okhttp.version}</version>
       </dependency>
 
     </dependencies>
