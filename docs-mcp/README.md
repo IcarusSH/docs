@@ -228,14 +228,15 @@ casdoor_jwt ─────────► 要求 ZDEDMS 启动时带
 
                           └─ casdoor_enabled=false
                               ▼
-                  ┌─────────────────────────┐
-                  │ username/password 兜底  │
-                  │                         │
-                  │ POST /api/user/login    │
-                  │   remember=true         │
-                  │   → 20 年有效 cookie   │
-                  │ 存到 config.json        │
-                  └─────────────────────────┘
+                  ┌──────────────────────────────────────┐
+                  │ username/password 兜底              │
+                  │                                      │
+                  │ POST /api/user/login                 │
+                  │   remember=false  (⚠️ 强制不勾)    │
+                  │   → 1 天 session cookie             │
+                  │ docs-mcp 客户端叠加 24h 强过期      │
+                  │ 存到 config.json + 写入登录时间戳   │
+                  └──────────────────────────────────────┘
 ```
 
 **关键约束**：
@@ -243,7 +244,10 @@ casdoor_jwt ─────────► 要求 ZDEDMS 启动时带
 - ZDEDMS 默认鉴权是 Cookie（`TokenBasedSecurityFilter`）。Casdoor JWT 路径要求
   **服务端启动时带 `-Ddocs.jwt_authentication=true`**（系统属性启用
   `JwtBasedSecurityFilter`）。**零服务端代码改动**。
-- 密码登录走 cookie，`remember=true` 拿 20 年 token，无需 refresh。
+- 密码登录**不传 `remember=true`**（拿 1 天 session token），客户端再叠
+  **24h 主动过期**：登录时写入 `login_at` 时间戳，调用前若 `now - login_at >= 24h`
+  → 抛 `AuthExpiredException` 让用户重新 `zdedms login`。比 ZDEDMS 默认 1 天更严，
+  防止 token 泄露后被长时间滥用。
 - TOTP/2FA：登录遇 `ValidationCodeRequired` 错误码，CLI 提示重输 6 位 code。
 
 ## 安装
